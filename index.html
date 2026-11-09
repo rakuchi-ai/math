@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GMARCH文系数学 必修解法パターン200選</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- KaTeX CDN -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="initKaTeX()"></script>
+
+    <!-- SheetJS CDN (Excel/CSV Parser) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        .katex-display { margin: 0.5em 0; overflow-x: auto; overflow-y: hidden; }
+        .step-transition { transition: all 0.3s ease-in-out; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col font-sans">
+
+    <!-- Header -->
+    <header class="bg-indigo-900 text-white shadow-md">
+        <div class="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="cursor-pointer flex items-center gap-2" onclick="showTopMenu()">
+                <i data-lucide="book-open" class="w-6 h-6 text-indigo-300"></i>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight">GMARCH文系数学</h1>
+                    <p class="text-xs text-indigo-200">必修解法パターン200選</p>
+                </div>
+            </div>
+            <div class="flex gap-2 text-sm">
+                <button onclick="showTopMenu()" class="px-3 py-1.5 bg-indigo-800 hover:bg-indigo-700 rounded-lg flex items-center gap-1 transition">
+                    <i data-lucide="home" class="w-4 h-4"></i> トップ
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 max-w-4xl w-full mx-auto p-4 flex flex-col">
+
+        <!-- 1. TOP MENU SCREEN -->
+        <div id="screen-top" class="space-y-6 my-auto">
+            <div class="text-center space-y-2 py-4">
+                <h2 class="text-2xl font-extrabold text-slate-900">演習モードを選択</h2>
+                <p class="text-sm text-slate-600">着眼点（トリガー）を想起してから解法手順を確認する2段階学習法</p>
+            </div>
+
+            <!-- Stats Bar -->
+            <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-200 flex justify-around text-center">
+                <div>
+                    <div class="text-xs text-slate-500">収録問題数</div>
+                    <div id="total-count-display" class="text-xl font-bold text-indigo-600">200</div>
+                </div>
+                <div class="border-r border-slate-200"></div>
+                <div>
+                    <div class="text-xs text-slate-500">要やり直し</div>
+                    <div id="stock-count-display" class="text-xl font-bold text-amber-600">0</div>
+                </div>
+            </div>
+
+            <!-- Mode Selection Grid -->
+            <div class="grid md:grid-cols-3 gap-4">
+                <!-- Option 1: Unit Select -->
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:border-indigo-500 transition flex flex-col justify-between">
+                    <div>
+                        <div class="w-10 h-10 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center mb-3">
+                            <i data-lucide="layers" class="w-5 h-5"></i>
+                        </div>
+                        <h3 class="font-bold text-lg text-slate-800 mb-1">① 単元別演習</h3>
+                        <p class="text-xs text-slate-500 mb-4">分野・単元を1つ指定して、その単元の全問題を順番に演習します。</p>
+                    </div>
+                    <div>
+                        <select id="unit-selector" class="w-full mb-3 p-2 text-sm border border-slate-300 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <!-- Populated dynamically -->
+                        </select>
+                        <button onclick="startUnitMode()" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg text-sm transition">
+                            単元別でスタート
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Option 2: Random -->
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:border-emerald-500 transition flex flex-col justify-between">
+                    <div>
+                        <div class="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3">
+                            <i data-lucide="shuffle" class="w-5 h-5"></i>
+                        </div>
+                        <h3 class="font-bold text-lg text-slate-800 mb-1">② ランダム全範囲</h3>
+                        <p class="text-xs text-slate-500 mb-4">全200問の中からランダムに問題を出題して実力を確認します。</p>
+                    </div>
+                    <button onclick="startRandomMode()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg text-sm transition">
+                        全範囲ランダム表示
+                    </button>
+                </div>
+
+                <!-- Option 3: Review Stock -->
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:border-amber-500 transition flex flex-col justify-between">
+                    <div>
+                        <div class="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center mb-3">
+                            <i data-lucide="bookmark" class="w-5 h-5"></i>
+                        </div>
+                        <h3 class="font-bold text-lg text-slate-800 mb-1">③ やり直し演習</h3>
+                        <p class="text-xs text-slate-500 mb-4">「覚えていない」とチェックした問題を復習・再チェックします。</p>
+                    </div>
+                    <button id="btn-start-stock" onclick="startStockMode()" class="w-full py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg text-sm transition">
+                        ストックを演習 (0問)
+                    </button>
+                </div>
+            </div>
+
+            <!-- Settings & Data Management -->
+            <div class="bg-slate-100 p-4 rounded-xl border border-slate-200 flex flex-wrap justify-between items-center gap-3 text-xs text-slate-600">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="database" class="w-4 h-4 text-slate-500"></i>
+                    <span>データ管理 / カスタムExcel読込:</span>
+                </div>
+                <div class="flex gap-2">
+                    <label class="px-3 py-1.5 bg-white border border-slate-300 rounded hover:bg-slate-50 cursor-pointer font-medium text-slate-700 transition">
+                        Excelファイルを選択
+                        <input type="file" id="file-input" accept=".xlsx, .xls" class="hidden" onchange="handleFileUpload(event)">
+                    </label>
+                    <button onclick="resetStock()" class="px-3 py-1.5 bg-rose-50 text-rose-600 border border-rose-200 rounded hover:bg-rose-100 font-medium transition">
+                        やり直しストックをリセット
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. EXERCISE SCREEN -->
+        <div id="screen-exercise" class="hidden flex-1 flex flex-col space-y-4">
+            
+            <!-- Question Top Bar -->
+            <div class="flex justify-between items-center text-xs font-semibold text-slate-500 bg-white px-4 py-2.5 rounded-lg border border-slate-200">
+                <div class="flex items-center gap-2">
+                    <span id="badge-importance" class="px-2 py-0.5 rounded text-white font-bold">重要度 S</span>
+                    <span id="badge-field" class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded">数学I</span>
+                    <span id="badge-unit" class="text-slate-600">2次関数</span>
+                </div>
+                <div id="progress-indicator" class="text-slate-600">1 / 7問目</div>
+            </div>
+
+            <!-- Problem Card (Always Visible) -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-3">
+                <div class="flex justify-between items-start">
+                    <span class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full">典型問題</span>
+                    <span id="problem-pattern" class="text-xs text-slate-400 font-medium"></span>
+                </div>
+                <div id="problem-text" class="text-slate-800 font-medium leading-relaxed text-base">
+                    <!-- Math text -->
+                </div>
+            </div>
+
+            <!-- Step 1 Trigger Button -->
+            <div id="section-trigger-btn" class="pt-2">
+                <button onclick="revealTrigger()" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow transition flex items-center justify-center gap-2 text-base">
+                    <i data-lucide="key" class="w-5 h-5"></i>
+                    トリガー（発想・着眼点）を表示
+                </button>
+            </div>
+
+            <!-- Step 2: Trigger Revealed Area -->
+            <div id="section-trigger-content" class="hidden bg-amber-50/80 border border-amber-200 rounded-xl p-5 space-y-2 step-transition">
+                <div class="text-xs font-bold text-amber-700 flex items-center gap-1.5">
+                    <i data-lucide="zap" class="w-4 h-4"></i>
+                    着眼点・発想のトリガー
+                </div>
+                <div id="trigger-text" class="text-amber-950 font-bold leading-relaxed text-base">
+                    <!-- Trigger content -->
+                </div>
+            </div>
+
+            <!-- Step 2 Solution Button -->
+            <div id="section-solution-btn" class="hidden">
+                <button onclick="revealSolution()" class="w-full py-3 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl shadow transition flex items-center justify-center gap-2 text-base">
+                    <i data-lucide="eye" class="w-5 h-5"></i>
+                    模範解答を見る
+                </button>
+            </div>
+
+            <!-- Step 3: Solution Revealed Area -->
+            <div id="section-solution-content" class="hidden bg-slate-900 text-slate-100 rounded-xl p-5 space-y-3 shadow-inner step-transition">
+                <div class="text-xs font-bold text-indigo-400 border-b border-slate-700 pb-2 flex items-center gap-1.5">
+                    <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+                    解法手順・模範解答
+                </div>
+                <div id="solution-text" class="text-slate-200 leading-relaxed text-sm whitespace-pre-line">
+                    <!-- Solution content -->
+                </div>
+            </div>
+
+            <!-- Step 4: Rating Buttons -->
+            <div id="section-rating" class="hidden pt-2 grid grid-cols-2 gap-4">
+                <button onclick="rateQuestion(true)" class="py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow transition flex items-center justify-center gap-2 text-base">
+                    <i data-lucide="check" class="w-5 h-5"></i>
+                    覚えた
+                </button>
+                <button onclick="rateQuestion(false)" class="py-3.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl shadow transition flex items-center justify-center gap-2 text-base">
+                    <i data-lucide="bookmark-plus" class="w-5 h-5"></i>
+                    覚えていない
+                </button>
+            </div>
+
+        </div>
+
+        <!-- 3. FINISH SCREEN -->
+        <div id="screen-finish" class="hidden my-auto text-center space-y-6 bg-white p-8 rounded-2xl border border-slate-200 shadow-sm max-w-lg mx-auto w-full">
+            <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
+                <i data-lucide="trophy" class="w-8 h-8"></i>
+            </div>
+            <div class="space-y-2">
+                <h2 class="text-2xl font-bold text-slate-900">演習完了！</h2>
+                <p id="finish-message" class="text-slate-600 text-sm">指定された問題をすべてチェックしました。</p>
+            </div>
+            <button onclick="showTopMenu()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow transition">
+                トップメニューに戻る
+            </button>
+        </div>
+
+    </main>
+
+    <script>
+        // Default built-in question database (200 patterns from Excel)
+        const DEFAULT_QUESTIONS = [{"id": 1, "field": "数学I", "unit": "2次関数", "pattern": "軸が動く2次関数の最大・最小", "trigger": "軸 x=a の位置と定義域の中央・端点の位置関係で場合分けする", "problem": "関数 f(x) = x^2 - 2ax + 1 (0 ≦ x ≦ 2) の最小値を求めよ。", "solution": "(1) 軸が定義域の左 (a < 0) → x=0で最小, (2) 定義域内 (0 ≦ a ≦ 2) → 頂点x=aで最小, (3) 定義域の右 (a > 2) → x=2で最小", "importance": "S"}, {"id": 2, "field": "数学I", "unit": "2次関数", "pattern": "2次方程式の解の配置問題（存在範囲）", "trigger": "判別式 D、軸の位置、端点のy座標の符号の3要素（D・軸・f(k)）をチェック", "problem": "2次方程式 x^2 - 2px + p + 2 = 0 がともに1より大きい異なる2解をもつ条件を求めよ。", "solution": "f(x)=x^2-2px+p+2 とおく。(1) D/4 > 0, (2) 軸 x=p > 1, (3) f(1) = 1 - 2p + p + 2 > 0 の共通範囲を求める。", "importance": "S"}, {"id": 3, "field": "数学I", "unit": "2次関数", "pattern": "絶対値記号を含む関数のグラフと方程式の解", "trigger": "y=|f(x)| のグラフを描き、直線 y=k との共有点の個数に帰着", "problem": "方程式 |x^2 - 4x| = k が異なる4つの実数解をもつ k の値の範囲を求めよ。", "solution": "y = |x^2-4x| のグラフ（x軸下部を折り返した形）を描き、極大値 4 を考慮して y=k と4点で交わる範囲 0 < k < 4 を導く。", "importance": "A"}, {"id": 4, "field": "数学I", "unit": "2次関数", "pattern": "条件付き2変数の最大・最小（条件式が2次）", "trigger": "1変数を消去し、消去する変数の実数条件（範囲制限）を忘れない", "problem": "x^2 + y^2 = 4 のとき、2x + y^2 の最大値と最小値を求めよ。", "solution": "y^2 = 4 - x^2 ≧ 0 より -2 ≦ x ≦ 2。2x + (4 - x^2) = -x^2 + 2x + 4 (-2 ≦ x ≦ 2) の平方完成から最大・最小を求める。", "importance": "A"}, {"id": 5, "field": "数学I", "unit": "2次関数", "pattern": "放物線と直線の位置関係・弦の長さ", "trigger": "2方程式を連立して2次方程式を作り、解と係数の関係および三平方の定理を活用", "problem": "放物線 y = x^2 と直線 y = x + 2 の2交点をA, Bとするとき、線分ABの長さを求めよ。", "solution": "x^2 - x - 2 = 0 の解 α, β に対し、AB = √(1+m^2) |α - β| （mは傾き1）公式、または |α - β| = √((α+β)^2 - 4αβ) から算出。", "importance": "B"}, {"id": 6, "field": "数学I", "unit": "数と式", "pattern": "対称式の計算（2変数・3変数）", "trigger": "基本対称式（x+y, xy 等）で表す", "problem": "x + y = 3, xy = 1 のとき、x^3 + y^3 および x^4 + y^4 の値を求めよ。", "solution": "x^3+y^3 = (x+y)^3 - 3xy(x+y), x^4+y^4 = (x^2+y^2)^2 - 2(xy)^2 より順次代入計算。", "importance": "S"}, {"id": 7, "field": "数学I", "unit": "数と式", "pattern": "二重根号の外し方", "trigger": "√(p ± 2√q) の形を作り、加算してp、乗算してqになる2数a, bを探す", "problem": "√(7 - 4√3) の二重根号を外して簡単にせよ。", "solution": "√(7 - 2√12) と変形。和が7、積が12となる数は4と3。√4 - √3 = 2 - √3。", "importance": "B"}, {"id": 8, "field": "数学I", "unit": "図形と計量", "pattern": "三角比の相互関係と値の決定", "trigger": "sin^2 θ + cos^2 θ = 1 を基本に、θの角の範囲（鋭角・鈍角）で符号に注意", "problem": "tan θ = -2 (90° < θ < 180°) のとき、sin θ と cos θ の値を求めよ。", "solution": "1 + tan^2 θ = 1/cos^2 θ より cos^2 θ = 1/5。鈍角より cos θ = -1/√5, sin θ = tan θ × cos θ = 2/√5。", "importance": "S"}, {"id": 9, "field": "数学I", "unit": "図形と計量", "pattern": "正弦定理・余弦定理の使い分け", "trigger": "外接円半径R・対角対辺ペアは正弦、3辺または2辺挟む角は余弦", "problem": "△ABCにおいて a=7, b=5, c=3 のとき、角Aの大きさと外接円の半径Rを求めよ。", "solution": "余弦定理 cos A = (5^2+3^2-7^2)/(2·5·3) = -1/2 より A=120°。正弦定理 a / sin A = 2R より R = 7 / (2·sin 120°) = 7/√3。", "importance": "S"}, {"id": 10, "field": "数学I", "unit": "図形と計量", "pattern": "三角形の面積公式と内接円の半径", "trigger": "S = 1/2 bc sin A および S = 1/2 r (a + b + c) の併用", "problem": "3辺が 5, 6, 7 の三角形の面積 S と内接円の半径 r を求めよ。", "solution": "余弦定理で cos 角を求め sin 角に変換して S = 1/2 ab sin C。次に S = r/2(a+b+c) に代入して r を求める（ヘロンの公式も可）。", "importance": "A"}, {"id": 11, "field": "数学A", "unit": "場合の数・確率", "pattern": "重複組合せ（〇と仕切り）", "trigger": "n種類のものから重複を許して r 個選ぶ組合せ → n+r-1 C r", "problem": "x + y + z = 10 を満たす非負の整数解 (x, y, z) の組は何通りあるか。", "solution": "10個の〇と2個の仕切り | の並べ替えと同じ。 10+3-1 C 10 = 12C2 = 66通り。（正の整数解なら x'=x-1 等とおく）", "importance": "S"}, {"id": 12, "field": "数学A", "unit": "場合の数・確率", "pattern": "条件付き確率 P_A(B)", "trigger": "Aが起こったという条件のもとでBが起こる確率 → P(A∩B) / P(A)", "problem": "赤球3個・白球2個の袋から戻さずに2個引くとき、2回目が赤と分かったとき1回目も赤である確率。", "solution": "P(1回目赤∩2回目赤) / P(2回目赤) を計算。全体集合を「2回目が赤の事象」に絞り込む。", "importance": "S"}, {"id": 13, "field": "数学A", "unit": "場合の数・確率", "pattern": "反復試行の確率", "trigger": "n回の試行で確率 p の事象がちょうど r 回起こる確率 → nCr × p^r × (1-p)^(n-r)", "problem": "サイコロを5回投げるとき、1の目がちょうど2回出る確率を求めよ。", "solution": "5C2 × (1/6)^2 × (5/6)^3 を計算。", "importance": "S"}, {"id": 14, "field": "数学A", "unit": "場合の数・確率", "pattern": "くじ引きの公平性と戻さない試行", "trigger": "当たりが出る確率は引く順番によらない性質を利用（または樹形図・確率の加法定理）", "problem": "10本中3本あたりのくじをA, Bの2人が順に1本ずつ引く（戻さない）。Bが当たる確率。", "solution": "Bが当たる確率 = (A当∩B当) + (A外∩B当) = (3/10×2/9) + (7/10×3/9) = 3/10。Aと同じ確率になる。", "importance": "A"}, {"id": 15, "field": "数学A", "unit": "図形の性質", "pattern": "チェバの定理・メネラウスの定理", "trigger": "三角形と直線、三角形と一点で交わる3直線 → 比の積が1になる巡回式", "problem": "△ABCの辺AB上にD、AC上にEをとり、BEとCDの交点をPとする。図形の線分比を求める問題。", "solution": "頂点から順に「頂点→分点→頂点→分点…」と周回する分数式を作り、積＝1 から未知の比を解く。", "importance": "A"}, {"id": 16, "field": "数学A", "unit": "図形の性質", "pattern": "円周角の定理と方べきの定理", "trigger": "円と交わる2直線 → PA·PB = PC·PD または PA^2 = PB·PC（接線）", "problem": "円の外部の点Pから接線PTと割線PABを引いたときの線分の長さを求める。", "solution": "方べきの定理 PT^2 = PA × PB を適用して未知の長さを方程式で求める。", "importance": "A"}, {"id": 17, "field": "数学A", "unit": "整数", "pattern": "ユークリッドの互除法と一次不定方程式", "trigger": "ax + by = 1 または c の整数解 → 互除法で1つの特殊解を見つけて一般解へ", "problem": "一次不定方程式 57x + 13y = 1 の整数解をすべて求めよ。", "solution": "57 = 13×4 + 5, 13 = 5×2 + 3, 5 = 3×1 + 2, 3 = 2×1 + 1 から逆に辿り特殊解 (x_0, y_0) を発見。57(x-x_0) + 13(y-y_0) = 0 より一般解を導く。", "importance": "S"}, {"id": 18, "field": "数学A", "unit": "整数", "pattern": "n進法の変換と循環小数", "trigger": "10進数とn進数の相互変換、小数部分はn倍して整数部分を取り出す", "problem": "10進数の 0.625 を2進数で表せ。また2進数 0.11(2) を分数で表せ。", "solution": "0.625×2=1.25(1), 0.25×2=0.5(0), 0.5×2=1.0(1) より 0.101(2)。", "importance": "B"}, {"id": 19, "field": "数学II", "unit": "三角関数", "pattern": "三角関数の合成 a sin θ + b cos θ", "trigger": "r sin(θ + α) に合成して、角度の範囲から最大・最小を求める", "problem": "y = sin θ + √3 cos θ (0 ≦ θ ≦ π) の最大値と最小値を求めよ。", "solution": "y = 2 sin(θ + π/3)。0 ≦ θ ≦ π より π/3 ≦ θ + π/3 ≦ 4π/3。正弦のとり得る値の範囲から最大値 2 (θ=π/6)、最小値 -√3 (θ=π) を求める。", "importance": "S"}, {"id": 20, "field": "数学II", "unit": "三角関数", "pattern": "2倍角・半角の公式と t = sin θ + cos θ の置換", "trigger": "t = sin θ + cos θ とおき、両辺2乗で sin θ cos θ = (t^2-1)/2。t の範囲制限に注意", "problem": "y = sin θ + cos θ + 2 sin θ cos θ (0 ≦ θ < 2π) の最大値・最小値を求めよ。", "solution": "t = sin θ + cos θ = √2 sin(θ+π/4) より -√2 ≦ t ≦ √2。y = t + (t^2 - 1) の2次関数に帰着してtの範囲で最大・最小を求める。", "importance": "S"}, {"id": 21, "field": "数学II", "unit": "指数・対数", "pattern": "対数方程式・不等式と真数条件・底条件", "trigger": "計算前に必ず「真数 > 0」「底 > 0, 底 ≠ 1」の定義域を確認する", "problem": "不等式 log_2(x) + log_2(x - 2) ≦ 3 を解け。", "solution": "(1) 真数条件: x > 0 かつ x - 2 > 0 ⇒ x > 2。(2) 底2 > 1 より log_2(x(x-2)) ≦ log_2(8) ⇒ x(x-2) ≦ 8 ⇒ (x-4)(x+2) ≦ 0 ⇒ -2 ≦ x ≦ 4。(1)(2)の共通範囲で 2 < x ≦ 4。", "importance": "S"}, {"id": 22, "field": "数学II", "unit": "指数・対数", "pattern": "相加・相乗平均の相関関係を活用する最大・最小", "trigger": "a > 0, b > 0 で a + b ≧ 2√(ab)。等号成立条件 a=b を必ず確認", "problem": "y = 2^x + 2^(-x) の最小値を求めよ。またそのときの x の値を求めよ。", "solution": "2^x > 0, 2^(-x) > 0 より 相加・相乗平均の不等式から 2^x + 2^(-x) ≧ 2 √(2^x · 2^(-x)) = 2。等号成立は 2^x = 2^(-x) 即ち x = 0 のとき。最小値 2。", "importance": "S"}, {"id": 23, "field": "数学II", "unit": "図形と方程式", "pattern": "点と直線の距離公式の利用", "trigger": "点 (x1, y1) と直線 ax + by + c = 0 の距離 d = |ax1 + by1 + c| / √(a^2 + b^2)", "problem": "点 (1, 2) と直線 3x - 4y + 15 = 0 の距離を求めよ。また円と直線の位置関係に応用。", "solution": "d = |3(1) - 4(2) + 15| / √(3^2 + (-4)^2) = |10| / 5 = 2。円の中心と直線の距離dと半径rの比較（d < r で2点交差等）に多用。", "importance": "S"}, {"id": 24, "field": "数学II", "unit": "図形と方程式", "pattern": "円と直線の交点を通る図形（円束・kの利用）", "trigger": "x^2 + y^2 + lx + my + n + k(x^2 + y^2 + l'x + m'y + n') = 0", "problem": "2円の交点と指定の点を通る直線や円の方程式を求める。", "solution": "kの恒等式として表し、指定された点を通る条件からkを決定。k=-1 のときは2円の交点を通る直線（共通弦）の方程式となる。", "importance": "A"}, {"id": 25, "field": "数学II", "unit": "図形と方程式", "pattern": "不等式の表す領域と線形計画法", "trigger": "領域を図示し、k = ax + by とおいて傾き一定の直線の切片 k の最大・最小を求める", "problem": "x ≧ 0, y ≧ 0, x + 2y ≦ 6, 2x + y ≦ 6 のとき、x + y の最大値および最小値を求めよ。", "solution": "4不等式の表す四角形領域を描く。x + y = k とおくと y = -x + k。直線が領域の頂点 (2, 2) を通るとき k は最大値 4、原点 (0,0) で最小値 0。", "importance": "S"}, {"id": 26, "field": "数学II", "unit": "微分法・積分法", "pattern": "3次関数の極値と極値をもつ条件", "trigger": "f'(x) = 0 の判別式 D の符号を調べる。極値をもつ ⇔ D > 0", "problem": "f(x) = x^3 + ax^2 + 3ax + 1 が極値をもつような定数 a の値の範囲を求めよ。", "solution": "f'(x) = 3x^2 + 2ax + 3a。f'(x)=0 が異なる2実解をもてばよいので、判別式 D/4 = a^2 - 9a > 0 より a < 0, a > 9。", "importance": "S"}, {"id": 27, "field": "数学II", "unit": "微分法・積分法", "pattern": "3次関数の接線の方程式と接線の本数", "trigger": "接点を (t, f(t)) とおいて接線式を作り、指定の点を通る条件から t の方程式を立てる", "problem": "点 (1, a) から 曲線 y = x^3 - 3x に引ける接線がちょうど3本存在するような a の範囲。", "solution": "接点 (t, t^3-3t) での接線式 y - (t^3-3t) = (3t^2-3)(x-1)。これが (1,a) を通る条件から a = -2t^3 + 3t^2 - 3。t の3次方程式が異なる3実解をもつよう右辺のグラフを描き a の範囲を決定。", "importance": "S"}, {"id": 28, "field": "数学II", "unit": "微分法・積分法", "pattern": "1/6公式（放物線と直線・放物線同士で囲まれた面積）", "trigger": "S = |a|/6 (β - α)^3", "problem": "放物線 y = x^2 - 3x と 直線 y = x の囲む面積 S を求めよ。", "solution": "交点 x^2 - 4x = 0 より x = 0, 4。 S = ∫_0^4 -(x^2 - 4x) dx = 1/6 (4 - 0)^3 = 64 / 6 = 32/3。", "importance": "S"}, {"id": 29, "field": "数学II", "unit": "微分法・積分法", "pattern": "1/12公式（3次関数と接線・2放物線の共通接線等の面積）", "trigger": "S = |a|/12 (β - α)^4", "problem": "曲線 y = x^3 と その上の点 (1,1) における接線で囲まれた部分の面積 S を求めよ。", "solution": "接線 y = 3x - 2。交点 x^3 - 3x + 2 = (x-1)^2(x+2) = 0 より x = -2, 1。 面積 S = 1/12 |1| (1 - (-2))^4 = 81/12 = 27/4。", "importance": "A"}, {"id": 30, "field": "数学II", "unit": "微分法・積分法", "pattern": "定積分で表された関数（定数型と変数型）", "trigger": "定数型は ∫=k とおく。変数型 ∫_a^x f(t)dt は x で微分すると f(x) になる", "problem": "f(x) = 2x + 3 ∫_0^1 f(t)dt を満たす関数 f(x) を求めよ。", "solution": "∫_0^1 f(t)dt = k (定数) とおく。f(x) = 2x + 3k。これを定積分に代入して k = ∫_0^1 (2t + 3k)dt = [t^2 + 3kt]_0^1 = 1 + 3k。-2k = 1 ⇒ k = -1/2。よって f(x) = 2x - 3/2。", "importance": "S"}, {"id": 31, "field": "数学B", "unit": "数列", "pattern": "等差数列・等比数列の和と一般項", "trigger": "a_n = a_1 + (n-1)d, S_n = n(2a_1+(n-1)d)/2 や a_n = S_n - S_{n-1} (n ≧ 2) の関係", "problem": "初項から第n項までの和が S_n = 2n^2 + 3n で表される数列の一般項 a_n を求めよ。", "solution": "a_1 = S_1 = 5。n ≧ 2 のとき a_n = S_n - S_{n-1} = (2n^2+3n) - {2(n-1)^2+3(n-1)} = 4n + 1。これは n=1 でも成り立つので a_n = 4n + 1。", "importance": "S"}, {"id": 32, "field": "数学B", "unit": "数列", "pattern": "（等差）×（等比）の型の和 S_n", "trigger": "S_n - r S_n（公比倍して1項ずらして引き算）を実行する", "problem": "和 S_n = 1·1 + 2·2 + 3·2^2 + 4·2^3 + ... + n·2^(n-1) を求めよ。", "solution": "S_n = 1 + 2·2 + 3·2^2 + ... + n·2^(n-1)。 2 S_n = 1·2 + 2·2^2 + ... + (n-1)·2^(n-1) + n·2^n。引くと -S_n = (1 + 2 + 2^2 + ... + 2^(n-1)) - n·2^n。等比数列の和を適用して整理。", "importance": "S"}, {"id": 33, "field": "数学B", "unit": "数列", "pattern": "漸化式の基本パターン（ a_{n+1} = p a_n + q ）", "trigger": "特性方程式 α = p α + q 解いて a_{n+1} - α = p(a_n - α) と変形", "problem": "a_1 = 1, a_{n+1} = 3 a_n + 4 で定められる数列 {a_n} の一般項を求めよ。", "solution": "α = 3α + 4 より α = -2。a_{n+1} + 2 = 3 (a_n + 2)。数列 {a_n + 2} は初項 a_1 + 2 = 3、公比 3 の等比数列。a_n + 2 = 3·3^(n-1) = 3^n ⇒ a_n = 3^n - 2。", "importance": "S"}, {"id": 34, "field": "数学B", "unit": "数列", "pattern": "漸化式（ a_{n+1} = p a_n / (q a_n + r) 型）", "trigger": "両辺の逆数を取って b_n = 1/a_n の漸化式に帰着させる", "problem": "a_1 = 1/2, a_{n+1} = a_n / (2 a_n + 3) で定められる数列の一般項を求めよ。", "solution": "両辺の逆数をとると 1/a_{n+1} = (2a_n + 3)/a_n = 3(1/a_n) + 2。b_n = 1/a_n とおくと b_{n+1} = 3 b_n + 2（基本パターン）に帰着。", "importance": "A"}, {"id": 35, "field": "数学B", "unit": "数列", "pattern": "群数列の解法パターン", "trigger": "第m群の「最初の項の全体の何項目か（項数和）」「群内の第k項」に着目する", "problem": "1 | 2, 3 | 4, 5, 6 | 7, 8, 9, 10 | ... のように群に分けるとき、第10群の最初の数と和を求めよ。", "solution": "第(n-1)群までの総項数は 1+2+...+(n-1) = 1/2 (n-1)n。第10群の最初の項は第9群までの項数和+1項目。n=10を代入して 1/2·9·10 + 1 = 46。第10群には10個の数が並ぶので等差数列の和で求める。", "importance": "S"}, {"id": 36, "field": "数学B", "unit": "ベクトル", "pattern": "平面ベクトル・位置ベクトルと分点・面積比", "trigger": "OP = (n OA + m OB)/(m+n)、交点は係数和 1（共線条件）を活用", "problem": "△OABにおいて辺OAを2:1に内分する点をC、OBを3:1に内分する点をDとし、ADとBCの交点をPとする。", "solution": "OP = s OA + t OB とおき、PがAD上にある条件（係数関係）とBC上にある条件から連立方程式を立てて s, t を決定。", "importance": "S"}, {"id": 37, "field": "数学B", "unit": "ベクトル", "pattern": "ベクトルの内積と垂直・平行条件", "trigger": "内積 a·b = |a||b| cos θ。垂直 ⇔ a·b = 0", "problem": "|a|=3, |b|=2, |a-b|=√7 のとき、a と b の内積およびなす角 θ を求めよ。", "solution": "|a-b|^2 = |a|^2 - 2 a·b + |b|^2 に代入。 7 = 9 - 2 a·b + 4 ⇒ 2 a·b = 6 ⇒ a·b = 3。 cos θ = 3 / (3×2) = 1/2 より θ = 60°。", "importance": "S"}, {"id": 38, "field": "数学B", "unit": "ベクトル", "pattern": "空間ベクトルの四面体と垂線の足", "trigger": "点Hが平面ABC上 ⇔ OH = s OA + t OB + u OC (s+t+u=1)、垂線 ⇔ PH ⊥ AB かつ PH ⊥ AC", "problem": "点P(1,1,1)から 3点A(1,0,0), B(0,2,0), C(0,0,3)の通る平面に下ろした垂線の足Hの座標を求めよ。", "solution": "AH = s AB + t AC とおき、PH·AB = 0 かつ PH·AC = 0 の2式から s, t を連立して解く。", "importance": "S"}, {"id": 39, "field": "数学C", "unit": "複素数平面", "pattern": "複素数平面・ド・モアブルの定理と回転", "trigger": "z = r(cos θ + i sin θ)、積は絶対値の積・偏角の和。回転操作は e^(iθ) の積", "problem": "複素数 z = 1 + i を原点を中心に 60° (π/3) 回転させた複素数 w を求めよ。", "solution": "z の極形式 r=√2, θ=π/4。回転を表す複素数 cos(π/3) + i sin(π/3) = 1/2 + √3/2 i を z に掛け算して算出。", "importance": "A"}, {"id": 40, "field": "数学C", "unit": "二次曲線", "pattern": "楕円・双曲線・放物線の方程式と焦点", "trigger": "楕円: x^2/a^2 + y^2/b^2 = 1 (焦点 c = √(a^2-b^2))、双曲線: 漸近線 y = ±(b/a)x", "problem": "2焦点 (3,0), (-3,0) からの距離の和が 10 である楕円の方程式を求めよ。", "solution": "距離の和 2a = 10 より a = 5。焦点 c = 3 より c^2 = a^2 - b^2 ⇒ 9 = 25 - b^2 ⇒ b^2 = 16。楕円式は x^2/25 + y^2/16 = 1。", "importance": "A"}, {"id": 41, "field": "数学I", "unit": "数と式", "pattern": "展開・因数分解の工夫（置き換えと次数の低い文字で整理）", "trigger": "共通部分のカタマリ A と置く、または最も次数の低い文字について降べきの順に整理", "problem": "式 (x^2 + 3x + 1)(x^2 + 3x + 3) - 8 を因数分解せよ。", "solution": "x^2 + 3x = X とおくと (X+1)(X+3) - 8 = X^2 + 4X - 5 = (X+5)(X-1)。元に戻して (x^2+3x+5)(x^2+3x-1)。", "importance": "A"}, {"id": 42, "field": "数学I", "unit": "数と式", "pattern": "絶対値記号を含む1次方程式・不等式", "trigger": "絶対値の中身の正負で場合分け（|A| = A (A≧0), -A (A<0)）または幾何的距離の解釈", "problem": "不等式 |2x - 3| < 5 および |x - 1| + |x - 3| ≦ 4 を解け。", "solution": "|2x-3|<5 ⇔ -5 < 2x-3 < 5 ⇒ -1 < x < 4。2つ以上の絶対値は数直線上で x<1, 1≦x<3, x≧3 に区間分割して外す。", "importance": "A"}, {"id": 43, "field": "数学I", "unit": "集合と命題", "pattern": "必要条件・十分条件の判定と包含関係", "trigger": "p ⇒ q が真なら p は q であるための十分条件、q は p であるための必要条件。集合 P ⊆ Q", "problem": "条件 p: x > 2, q: x^2 > 4 に対する p は q であるための条件判定。", "solution": "x > 2 ⇒ x^2 > 4 は真（十分条件）。x^2 > 4 ⇒ x > 2 は偽（反例 x=-3）。よって「十分条件だが必要条件ではない」。", "importance": "S"}, {"id": 44, "field": "数学I", "unit": "集合と命題", "pattern": "背理法と対偶を用いた証明", "trigger": "直接証明が困難なとき「対偶：非q ⇒ 非p」を示すか、「結論の否定」を仮定して矛盾を導く", "problem": "「n^2 が偶数ならば n は偶数である」を対偶を用いて証明せよ。また √2 が無理数であることを示せ。", "solution": "対偶「nが奇数ならば n^2 は奇数」を n=2k+1 として計算証明。背理法は有理数 a/b (互いに素) と仮定して矛盾を示す。", "importance": "S"}, {"id": 45, "field": "数学I", "unit": "2次関数", "pattern": "2次関数の決定（3点通過・頂点・軸の条件）", "trigger": "頂点 (p, q) なら y=a(x-p)^2+q、3点なら y=ax^2+bx+c、x軸との交点なら y=a(x-α)(x-β)", "problem": "放物線の頂点が (2, -1) で点 (4, 7) を通る 2次関数を求めよ。", "solution": "y = a(x-2)^2 - 1 とおき、(4, 7) を代入して 7 = a(4-2)^2 - 1 ⇒ 4a = 8 ⇒ a = 2。よって y = 2(x-2)^2 - 1。", "importance": "B"}, {"id": 46, "field": "数学I", "unit": "2次関数", "pattern": "すべての実数 x で成り立つ2次不等式（絶対不等式）", "trigger": "最高次の係数 a > 0 かつ 判別式 D < 0 （グラフがx軸より常に上にある）", "problem": "すべての実数 x に対して 2次不等式 x^2 + 2kx + k + 6 > 0 が成り立つ k の値の範囲。", "solution": "グラフが下に凸かつx軸と共有点をもたない条件より、D/4 = k^2 - (k+6) < 0 ⇒ (k-3)(k+2) < 0 ⇒ -2 < k < 3。", "importance": "S"}, {"id": 47, "field": "数学I", "unit": "図形と計量", "pattern": "内角の二等分線と比・中線定理", "trigger": "角の二等分線は対辺を挟む2辺の比に内分(BD:DC=AB:AC)。中線定理 AB^2+AC^2=2(AM^2+BM^2)", "problem": "△ABCで AB=6, AC=4, BC=5 のとき、∠Aの二等分線とBCの交点Dによる線分BDの長さを求めよ。", "solution": "BD:DC = AB:AC = 6:4 = 3:2。よって BD = 5 × 3/(3+2) = 3。ADの長さは余弦定理または二等分線公式で求める。", "importance": "A"}, {"id": 48, "field": "数学I", "unit": "図形と計量", "pattern": "空間図形への三角比の応用（測量・四面体の高さ）", "trigger": "立体から直角三角形または特定の平面を抜き出して平面図形問題に還元する", "problem": "水平な地面の点Hに立つ高さhの塔の頂点を、A, Bから見上げた仰角と辺ABの長さからhを求める問題。", "solution": "直角三角形から AH, BH を h で表し、地面上の △ABH に余弦定理を適用して未知数 h の方程式を解く。", "importance": "A"}, {"id": 49, "field": "数学I", "unit": "データの分析", "pattern": "分散・標準偏差の計算と平均値・分散の変換公式", "trigger": "分散 s^2 = (各データの2乗の平均) - (平均の2乗)。変量変換 y = ax + b のとき s_y^2 = a^2 s_x^2", "problem": "データ x の平均が 50、分散が 16 のとき、y = 2x + 10 の平均・分散・標準偏差を求めよ。", "solution": "平均 y_bar = 2(50) + 10 = 110。分散 s_y^2 = 2^2 × 16 = 64。標準偏差 s_y = |2| × 4 = 8。", "importance": "S"}, {"id": 50, "field": "数学I", "unit": "データの分析", "pattern": "相関係数と散布図の読み取り・外れ値の影響", "trigger": "相関係数 r = 共分散 s_xy / (s_x · s_y)。-1 ≦ r ≦ 1。傾き正で直線的相関が高いほど 1 に近い", "problem": "2つのテスト得点データの相関係数が 0.82 であるときの散布図の特徴と解釈を問う問題。", "solution": "強い正の相関を示す。1人の点数が極端にずれた外れ値が加わると相関係数が大きく変動する点に注意する。", "importance": "B"}, {"id": 51, "field": "数学A", "unit": "場合の数・確率", "pattern": "円順列・じゅず順列の計算", "trigger": "1つの要素を固定して (n-1)!、裏返して同一視できる場合は 1/2 倍", "problem": "異なる6色のビーズを円形に並べる方法と、糸を通して輪にする方法の総数を求めよ。", "solution": "円順列は (6-1)! = 120通り。じゅず順列は表裏同一視より 120 / 2 = 60通り。", "importance": "A"}, {"id": 52, "field": "数学A", "unit": "場合の数・確率", "pattern": "同じものを含む順列と最短経路問題", "trigger": "同じ文字 a個, b個 の順列は (a+b)! / (a! b!)。直方体や障害物のある格子道にも適用", "problem": "東西に4街区、南北に3街区の碁盤の目で、交差点Pを通る最短経路の数を求めよ。", "solution": "原点からPまでの最短経路数と、Pから目的地までの最短経路数を積の法則で掛け合わせる。", "importance": "S"}, {"id": 53, "field": "数学A", "unit": "場合の数・確率", "pattern": "組分け問題（区別の有無と重複度）", "trigger": "グループ名（A, B, C）があるか、単なる「3人ずつの3組」かで割る数が変わる", "problem": "9人を (1) 3人ずつA, B, Cの3部屋に分ける (2) 3人ずつの3組に分ける方法の総数。", "solution": "(1) 9C3 × 6C3 × 3C3 = 1680通り。(2) 3部屋の区別をなくすため 1680 / 3! = 280通り。", "importance": "S"}, {"id": 54, "field": "数学A", "unit": "場合の数・確率", "pattern": "完全順列（攪乱順列・モンモール数）", "trigger": "どの要素も元の位置にこない並び替え。樹形図または漸化式 W(n) = (n-1)(W(n-1)+W(n-2))", "problem": "4人がプレゼントを持ち寄り、全員が自分の持参した以外のものを受け取る確率。", "solution": "4つの完全順列は 9通り。全事象 4! = 24通り より、確率は 9/24 = 3/8。", "importance": "A"}, {"id": 55, "field": "数学A", "unit": "場合の数・確率", "pattern": "「少なくとも1つ」と余事象の確率", "trigger": "「少なくとも」という表現を見たら即座に余事象 P(A) = 1 - P(Aバー) を検討する", "problem": "3枚の硬貨を同時に投げるとき、少なくとも1枚は表が出る確率を求めよ。", "solution": "余事象「3枚とも裏」の確率 (1/2)^3 = 1/8。よって 1 - 1/8 = 7/8。", "importance": "S"}, {"id": 56, "field": "数学A", "unit": "場合の数・確率", "pattern": "原因の確率（ベイズの定理の考え方）", "trigger": "結果 B が生じたとき、その原因が A_k であった事象の条件付き確率 P(A_k|B)", "problem": "工場A(シェア60%, 不良率2%)と工場B(40%, 3%)の製品から1個取り出し不良品のとき、それがA製である確率。", "solution": "全不良品確率 P(不良) = 0.6×0.02 + 0.4×0.03 = 0.024。P(A∩不良) = 0.012 より 0.012/0.024 = 1/2。", "importance": "S"}, {"id": 57, "field": "数学A", "unit": "場合の数・確率", "pattern": "確率漸化式の立式（状態遷移図）", "trigger": "時刻 n から n+1 への状態の変化を確率推移行列・樹形図から等式化する", "problem": "点Pが数直線上を硬貨の表で+1、裏で-1移動する。n回後に原点にある確率 p_n を求める問題。", "solution": "状態 A, B, C に分類し、p_{n+1} を p_n や他の状態の確率で表す漸化式を立てて解く。", "importance": "A"}, {"id": 58, "field": "数学A", "unit": "整数", "pattern": "約数の個数と総和の公式", "trigger": "N = p^a · q^b · r^c のとき 個数 (a+1)(b+1)(c+1)、総和 (1+p+...+p^a)(1+q+...+q^b)...", "problem": "360 の正の約数の個数と、その約数の総和を求めよ。", "solution": "360 = 2^3 · 3^2 · 5^1。個数 (3+1)(2+1)(1+1) = 24個。総和 (1+2+4+8)(1+3+9)(1+5) = 15×13×6 = 1170。", "importance": "S"}, {"id": 59, "field": "数学A", "unit": "整数", "pattern": "倍数の判定法（3, 4, 8, 9, 11 の倍数判定）", "trigger": "各桁の和（3, 9）、下2桁（4）、下3桁（8）、奇数桁和と偶数桁和の差（11）に着目", "problem": "6桁の数 5a324b が 36 の倍数となるとき、一桁の自然数 a, b の組を求めよ。", "solution": "36 = 4 × 9（互いに素）。下2桁 4b が4の倍数 ⇒ b=0,4,8。各桁の和が9の倍数より a を決定。", "importance": "A"}, {"id": 60, "field": "数学A", "unit": "整数", "pattern": "余りによる分類と合同式（mod）の活用", "trigger": "整数を n で割った余りで n 種類に分類（n=3なら 3k, 3k±1）。べき乗の余りは mod 算で周期性を追う", "problem": "2^2024 を 7 で割った余りを求めよ。また n^2 を 3 で割った余りが 2 にならないことを示せ。", "solution": "2^1 ≡ 2, 2^2 ≡ 4, 2^3 ≡ 1 (mod 7) より周期3。2024 = 3×674 + 2 より 2^2024 ≡ 2^2 = 4 (mod 7)。", "importance": "S"}, {"id": 61, "field": "数学A", "unit": "整数", "pattern": "互いに素な整数と一次不定方程式の整数解の個数", "trigger": "a と b が互いに素のとき ax = by ⇒ x は b の倍数。非負整数解・自然数解の不等式制限", "problem": "方程式 7x + 5y = 100 を満たす自然数 (x, y) の組の個数を求めよ。", "solution": "特殊解を見つけ一般解 x = 5k + 5, y = -7k + 13。自然数条件 x ≧ 1, y ≧ 1 から k の範囲を絞る。", "importance": "S"}, {"id": 62, "field": "数学A", "unit": "整数", "pattern": "素数判定と式の因数分解型整数問題", "trigger": "積の形 (式)×(式) = (整数) または (式)×(式) = 素数 p に変形して約数の候補を絞る", "problem": "n^2 - 14n + 40 が素数となるような自然数 n の値をすべて求めよ。", "solution": "(n - 4)(n - 10) = p と因数分解。片方が ±1、もう片方が素数 p となる組み合わせを調べる。", "importance": "A"}, {"id": 63, "field": "数学A", "unit": "図形の性質", "pattern": "三角形の五心（外心・内心・重心・垂心・傍心）の性質", "trigger": "外心: 垂直二等分線、内心: 角の二等分線、重心: 中線を2:1内分、垂心: 頂点からの垂線", "problem": "△ABCの内心Iを通る平行線が辺AB, ACと交わる図形における線分の長さと比の性質。", "solution": "角の二等分線の錯角・同位角から二等辺三角形を見出し、等しい線分を置き換えて比を導出。", "importance": "A"}, {"id": 64, "field": "数学A", "unit": "図形の性質", "pattern": "接弦定理と円外の点からの2接線", "trigger": "円の接線と弦のなす角は、その角の内部にある弧に対する円周角に等しい。接線の長さは等しい", "problem": "円Oの接線PTと弦ABのなす角 ∠PTA = ∠ABT を用いて未知の角度を求める問題。", "solution": "接弦定理により等しい角を対応させ、円周角の定理や三角形の内角の和から角度を導出。", "importance": "B"}, {"id": 65, "field": "数学A", "unit": "図形の性質", "pattern": "円に内接する四角形の性質とトレミーの定理", "trigger": "対角の和が 180°。トレミーの定理: 対角線の積 = 対辺の積の和 (AC·BD = AB·CD + AD·BC)", "problem": "円に内接する四角形ABCDにおいて各辺の長さが与えられたとき、対角線ACの長さを求めよ。", "solution": "余弦定理を △ABC と △ADC に適用。cos B + cos D = 0 (D = 180°-B) より cos B を消去して解く。", "importance": "S"}, {"id": 66, "field": "数学A", "unit": "図形の性質", "pattern": "空間図形・多面体のオイラーの公式と最短距離", "trigger": "頂点の数 V - 辺の数 E + 面の数 F = 2。立体の表面を通る最短距離は「展開図」で直線で結ぶ", "problem": "直方体の表面をAから対角の頂点Gまで糸をかけるときの最短長さを求めよ。", "solution": "直方体の隣接する2面を展開して1つの平面図形にし、2点を結ぶ線分の長さを三平方の定理で計算。", "importance": "B"}, {"id": 67, "field": "数学II", "unit": "複素数と方程式", "pattern": "複素数の相等と実数係数方程式の虚数解共役性", "trigger": "a+bi = 0 (a,b実数) ⇔ a=0 かつ b=0。実数係数方程式が虚数解 α をもてば共役複素数 α_bar も解", "problem": "2次方程式 x^2 + px + q = 0 が解 2 + 3i をもつとき、実数 p, q の値を求めよ。", "solution": "解と係数の関係より、2つの解は 2 ± 3i。和: 4 = -p ⇒ p=-4、積: 4 - 9i^2 = 13 = q ⇒ q=13。", "importance": "S"}, {"id": 68, "field": "数学II", "unit": "複素数と方程式", "pattern": "3次方程式の解と係数の関係", "trigger": "x^3 + px^2 + qx + r = 0 の解 α, β, γ に対し、和 -p、2積和 q、3積 -r", "problem": "3次方程式 x^3 - 3x^2 + 4x - 5 = 0 の3解を α, β, γ とするとき α^2 + β^2 + γ^2 の値を求めよ。", "solution": "基本対称式 α+β+γ=3, αβ+βγ+γα=4 を用い、(α+β+γ)^2 - 2(αβ+βγ+γα) = 9 - 8 = 1。", "importance": "A"}, {"id": 69, "field": "数学II", "unit": "複素数と方程式", "pattern": "剰余の定理・因数定理と2次式で割った余り", "trigger": "整式 P(x) を (x-a)(x-b) で割った余りは一次式 ax+b。P(a), P(b) の連立方程式で決定", "problem": "整式 P(x) を x-1 で割ると 3 余り、x+2 で割ると -3 余る。P(x) を (x-1)(x+2) で割った余りを求めよ。", "solution": "P(x) = (x-1)(x+2)Q(x) + ax + b とおく。P(1) = a+b = 3, P(-2) = -2a+b = -3 を連立して a=2, b=1。", "importance": "S"}, {"id": 70, "field": "数学II", "unit": "複素数と方程式", "pattern": "3次式で割った余りと因数の構造利用", "trigger": "P(x) を (x-1)^2 (x+2) で割った余りは a(x-1)^2 + (x-1で割った余り) と表せる", "problem": "P(x) を (x-1)^2 で割ると 2x+1 余り、x+1 で割ると 4 余るとき、(x-1)^2(x+1) で割った余りを求めよ。", "solution": "余りを a(x-1)^2 + 2x + 1 とおく。P(-1) = a(-2)^2 + 2(-1) + 1 = 4a - 1 = 4 ⇒ 4a = 5 ⇒ a=5/4。", "importance": "A"}, {"id": 71, "field": "数学II", "unit": "式と証明", "pattern": "恒等式の未定係数決定（係数比較法・数値代入法）", "trigger": "展開して各次数の係数を比べるか、計算が簡単になる都合の良い数値を代入して必要条件から絞る", "problem": "恒等式 a(x-1)(x-2) + b(x-2)(x-3) + c(x-3)(x-1) = x^2 - 4x + 7 の係数 a, b, c を求めよ。", "solution": "x=1, x=2, x=3 をそれぞれ代入して a, b, c を直接算出（数値代入法）。十分性の確認も行う。", "importance": "A"}, {"id": 72, "field": "数学II", "unit": "式と証明", "pattern": "相加・相乗平均の不等式による逆数和の最小値", "trigger": "変数が分母と分子に逆数関係で現れるとき a + b ≧ 2√(ab) で積が定数になることを利用", "problem": "x > 0 のとき x + 9/x の最小値と、そのときの x の値を求めよ。", "solution": "x > 0, 9/x > 0 より x + 9/x ≧ 2√(x · 9/x) = 2×3 = 6。等号成立は x = 9/x 即ち x=3 のとき。最小値 6。", "importance": "S"}, {"id": 73, "field": "数学II", "unit": "式と証明", "pattern": "コーシー・シュワルツの不等式とその活用", "trigger": "(a^2 + b^2)(x^2 + y^2) ≧ (ax + by)^2。等号成立 a/x = b/y", "problem": "x^2 + y^2 = 5 のとき、2x + 3y のとり得る値の最大値と最小値を求めよ。", "solution": "(2^2 + 3^2)(x^2 + y^2) ≧ (2x + 3y)^2 ⇒ 13×5 ≧ (2x+3y)^2 ⇒ |2x+3y| ≦ √65。最大値 √65, 最小値 -√65。", "importance": "A"}, {"id": 74, "field": "数学II", "unit": "図形と方程式", "pattern": "軌跡の基本手順と除外点の吟味", "trigger": "(1) 動点を (x, y) とおく (2) 与えられた幾何条件を式にする (3) 条件から媒介変数を消去 (4) 範囲・除外点を確認", "problem": "2点 A(-1, 0), B(3, 0) に対し、AP:BP = 1:2 を満たす点Pの軌跡（アポロニウスの円）を求めよ。", "solution": "P(x,y) とおき 2 AP = BP ⇒ 4 AP^2 = BP^2。展開整理して円の方程式を導く。除外点なし。", "importance": "S"}, {"id": 75, "field": "数学II", "unit": "図形と方程式", "pattern": "2直線の平行・垂直条件（一般形 ax + by + c = 0）", "trigger": "平行 ⇔ a1 b2 - a2 b1 = 0、垂直 ⇔ a1 a2 + b1 b2 = 0（傾き同士の積 m1 m2 = -1 に同値）", "problem": "直線 2x + 3y - 5 = 0 に垂直で点 (1, -2) を通る直線の方程式を求めよ。", "solution": "垂直な直線の法線ベクトルから 3x - 2y + c = 0 とおき、(1, -2) を代入して c を決定。", "importance": "S"}, {"id": 76, "field": "数学II", "unit": "図形と方程式", "pattern": "円の接線の方程式（円上の点と円外の点からの接線）", "trigger": "円上の点 (x0, y0) での接線 x0 x + y0 y = r^2。円外の点からは点と直線の距離 d = r を連立", "problem": "点 (3, 1) から 円 x^2 + y^2 = 5 に引いた接線の方程式を求めよ。", "solution": "接点を (x1, y1) とおいて接線 x1 x + y1 y = 5 を立て、(3,1) 通過条件 3x1 + y1 = 5 と x1^2+y1^2=5 を連立。", "importance": "S"}, {"id": 77, "field": "数学II", "unit": "図形と方程式", "pattern": "2円の位置関係と共通接線の本数", "trigger": "中心間距離 d と半径 r1, r2 の和・差の関係（離れている: 4本、外接: 3本、交わる: 2本、内接: 1本、内包: 0本）", "problem": "中心 (0,0) 半径 2 の円と、中心 (4,0) 半径 1 の円の共通内接線・外接線の方程式を求めよ。", "solution": "相似の中心を利用して共通接線が通る定点を求め、点と直線の距離 d = r から接線の傾きを算出。", "importance": "A"}, {"id": 78, "field": "数学II", "unit": "図形と方程式", "pattern": "通過領域の決定（逆像法・実数解条件）", "trigger": "「点 (X, Y) が通過領域に含まれる ⇔ X, Y を代入した t の方程式が指定の範囲に実数解をもつ」", "problem": "直線 y = 2tx - t^2 (0 ≦ t ≦ 1) の通過する領域を図示せよ。", "solution": "t の2次方程式 t^2 - 2Xt + Y = 0 が 0 ≦ t ≦ 1 に少なくとも1つの実数解をもつ条件（解の配置）に帰着。", "importance": "S"}, {"id": 79, "field": "数学II", "unit": "三角関数", "pattern": "加法定理と2倍角・3倍角の公式", "trigger": "sin(α±β), cos(α±β)。2倍角: cos 2α = 2 cos^2 α - 1。3倍角: sin 3α = 3 sin α - 4 sin^3 α", "problem": "cos α = 3/5 のとき cos 2α の値、および 3倍角の公式を用いて方程式 4 cos^3 x - 3 cos x = 1/2 を解く。", "solution": "cos 2α = 2(3/5)^2 - 1 = -7/25。3倍角より方程式は cos 3x = 1/2 に変形され、角の範囲から解を求める。", "importance": "S"}, {"id": 80, "field": "数学II", "unit": "三角関数", "pattern": "三角関数の積和・和積の公式とその活用", "trigger": "積から和への変換で積分の被積分関数や関数の和の変形を簡略化する", "problem": "関数 y = sin(x + π/4) sin(x - π/4) の値域を求めよ。", "solution": "積和の公式より y = -1/2 [cos 2x - cos(π/2)] = -1/2 cos 2x。よって値域は -1/2 ≦ y ≦ 1/2。", "importance": "B"}, {"id": 81, "field": "数学II", "unit": "三角関数", "pattern": "三角関数の対称式・交代式と因数分解", "trigger": "sin θ + cos θ = u, sin θ cos θ = v とおき、基本対称式で変形する", "problem": "sin θ + cos θ = 1/2 (0 ≦ θ < π) のとき、sin^3 θ + cos^3 θ および sin θ - cos θ の値を求めよ。", "solution": "両辺2乗で 1 + 2 sin θ cos θ = 1/4 ⇒ sin θ cos θ = -3/8。交代式は (sin θ - cos θ)^2 を計算して符号判定。", "importance": "A"}, {"id": 82, "field": "数学II", "unit": "三角関数", "pattern": "単位円を用いた三角方程式・不等式の解法", "trigger": "sin θ は単位円上の y 座標、cos θ は x 座標、tan θ は直線 x=1 上の y 座標（傾き）", "problem": "0 ≦ θ < 2π のとき 不等式 2 cos^2 θ + sin θ - 1 > 0 を解け。", "solution": "cos^2 θ = 1 - sin^2 θ で sin に統一: 2(1 - sin^2 θ) + sin θ - 1 > 0 ⇒ (2 sin θ + 1)(sin θ - 1) < 0 を解く。", "importance": "S"}, {"id": 83, "field": "数学II", "unit": "指数・対数", "pattern": "底の変換公式 log_a(b) = log_c(b) / log_c(a)", "trigger": "底が揃っていないときは、問題文で最も共通する底（素数 2, 3 等）に底を統一する", "problem": "log_2(3) · log_3(5) · log_5(8) の値を計算せよ。", "solution": "すべて底を 2 に統一: log_2(3) × (log_2(5)/log_2(3)) × (log_2(8)/log_2(5)) = log_2(8) = 3。", "importance": "S"}, {"id": 84, "field": "数学II", "unit": "指数・対数", "pattern": "対数不等式と底による不等号の向き（0 < a < 1 の逆転）", "trigger": "底 a > 1 のとき真数の大小そのまま、0 < a < 1 のとき真数の大小は不等号が逆転する", "problem": "不等式 log_{1/3}(x - 1) > 2 を解け。", "solution": "真数条件 x - 1 > 0 ⇒ x > 1。底 1/3 < 1 より x - 1 < (1/3)^2 = 1/9 ⇒ x < 10/9。共通範囲は 1 < x < 10/9。", "importance": "S"}, {"id": 85, "field": "数学II", "unit": "指数・対数", "pattern": "常用対数と桁数決定・小数首位", "trigger": "N の桁数は [log_10(N)] + 1、小数第n位に初めて0でない数は -n ≦ log_10(N) < -(n-1)", "problem": "6^30 は何桁の整数か。また、(1/2)^50 は小数第何位に初めて0でない数字が現れるか。（log_10 2=0.3010, log_10 3=0.4771）", "solution": "log_10(6^30) = 30(log_10 2 + log_10 3) = 30(0.7781) = 23.343。よって 23 ≦ log_10 N < 24 より 24桁。", "importance": "S"}, {"id": 86, "field": "数学II", "unit": "指数・対数", "pattern": "常用対数と最高位の数字・末尾の0の個数", "trigger": "log_10(N) の小数部分を log_10(2), log_10(3) 等の数値と比較して最高位の数字を特定する", "problem": "3^40 の最高位の数字を求めよ。（log_10 3 = 0.4771 とする）", "solution": "log_10(3^40) = 40 × 0.4771 = 19.084。小数部分 0.084 について log_10 1 = 0 < 0.084 < log_10 2 = 0.3010 より 最高位は 1。", "importance": "A"}, {"id": 87, "field": "数学II", "unit": "指数・対数", "pattern": "指数関数・対数関数の連立方程式と対称性", "trigger": "X = 2^x, Y = 2^y または 対数の和・積をおいて 2変数方程式に帰着させる", "problem": "連立方程式 2^x + 2^y = 10, 2^{x+y} = 16 を解け。", "solution": "X = 2^x, Y = 2^y とおくと X + Y = 10, XY = 16。t^2 - 10t + 16 = 0 の解 t = 2, 8 より (x, y) = (1, 3), (3, 1)。", "importance": "A"}, {"id": 88, "field": "数学II", "unit": "微分法", "pattern": "平均変化率と導関数の定義式", "trigger": "f'(a) = lim_{h->0} [f(a+h) - f(a)] / h。定義に従って微分係数を求める記述問題に対応", "problem": "関数 f(x) = x^2 の x=3 における微分係数を、導関数の定義式に従って計算せよ。", "solution": "lim_{h->0} [(3+h)^2 - 3^2] / h = lim_{h->0} [6h + h^2] / h = lim_{h->0} (6 + h) = 6。", "importance": "B"}, {"id": 89, "field": "数学II", "unit": "微分法", "pattern": "3次関数のグラフの対称中心（変曲点）と1:1:1の比率関係", "trigger": "3次関数は変曲点に関して点対称。極大値・極小値・接点・交点の間に 1:1:1 の等間隔比率が成立", "problem": "f(x) = x^3 - 3x^2 の極大値・極小値を与えるxと、極大値と同じ値をとる他のxを比率で瞬時に特定。", "solution": "f'(x)=3x(x-2)。極大 x=0, 極小 x=2, 変曲点 x=1。極大と同じ高さの共有点は x = 2 + 1 = 3 と比率で即答可能。", "importance": "S"}, {"id": 90, "field": "数学II", "unit": "微分法", "pattern": "3次関数が常に単調増加（または単調減少）となる条件", "trigger": "導関数 f'(x) ≧ 0 がすべての実数 x で成り立つ ⇔ 2次方程式 f'(x) = 0 の判別式 D ≦ 0", "problem": "関数 f(x) = x^3 + kx^2 + 3x + 1 が常に単調に増加するような定数 k の値の範囲を求めよ。", "solution": "f'(x) = 3x^2 + 2kx + 3 ≧ 0 が常に成り立つため、判別式 D/4 = k^2 - 9 ≦ 0 より -3 ≦ k ≦ 3。", "importance": "S"}, {"id": 91, "field": "数学II", "unit": "微分法", "pattern": "4次関数の極値とグラフの形状分類", "trigger": "導関数 f'(x) = 0 が3つの異なる実解をもつとき極小値2個・極大値1個（W型）。重解なら単調増減", "problem": "f(x) = x^4 - 4x^3 + 4x^2 + 1 の増減表を作成し、極値をすべて求めよ。", "solution": "f'(x) = 4x(x-1)(x-2)。x=0, 2 で極小値 1、x=1 で極大値 2 をとる左右対称なW字型グラフとなる。", "importance": "A"}, {"id": 92, "field": "数学II", "unit": "微分法", "pattern": "区間における3次関数の最大値・最小値（文字定数入り）", "trigger": "区間の端点 f(0), f(L) と 極値 f(x_ext) の値を比較し、最大・最小となる候補で場合分け", "problem": "f(x) = -x^3 + 3x (0 ≦ x ≦ a) の最大値を求めよ。", "solution": "f'(x) = -3(x-1)(x+1)。極大値は x=1 で 2。0 < a < 1 では f(a) が最大、1 ≦ a < 2 では 2 が最大、a ≧ 2 では f(a) が最大。", "importance": "S"}, {"id": 93, "field": "数学II", "unit": "微分法", "pattern": "定数分離法による方程式の実数解の個数決定", "trigger": "f(x) = a の形に定数 a を単独で分離し、y = f(x) のグラフと直線 y = a の共有点の個数に持ち込む", "problem": "方程式 x^3 - 6x^2 + 9x - a = 0 が異なる3つの実数解をもつような定数 a の値の範囲。", "solution": "x^3 - 6x^2 + 9x = a と分離。g(x) = x^3 - 6x^2 + 9x の極大値 4 (x=1) と極小値 0 (x=3) の間より 0 < a < 4。", "importance": "S"}, {"id": 94, "field": "数学II", "unit": "微分法", "pattern": "不等式が常に成り立つ条件への微分法の応用", "trigger": "区間内で [f(x)の最小値] ≧ 0 を示すことで、不等式 f(x) ≧ 0 の成立を証明する", "problem": "x > 0 のとき 不等式 x^3 - 3x^2 + 4 > 0 が成り立つことを証明せよ。", "solution": "f(x) = x^3 - 3x^2 + 4 とおき増減表を作成。x > 0 における最小値 f(2) = 0 より、等号成立点以外で常に正であることを示す。", "importance": "A"}, {"id": 95, "field": "数学II", "unit": "微分法", "pattern": "共通接線（2曲線に共通に接する直線）", "trigger": "2接点を (s, f(s)), (t, g(t)) とおき、それぞれの接線の方程式が一致する係数比較を行う", "problem": "2つの放物線 y = x^2 と y = -(x-2)^2 + 1 の両方に接する共通接線の方程式を求めよ。", "solution": "y = 2s x - s^2 と y = -2(t-2)x + t^2 - 3 が一致する条件から 傾き 2s = -2(t-2) かつ 切片 -s^2 = t^2 - 3 を解く。", "importance": "S"}, {"id": 96, "field": "数学II", "unit": "微分法", "pattern": "曲線外の点から引いた接線の方程式と直交条件", "trigger": "接点を (t, f(t)) とおいた接線が指定の点を通過する条件式を立て、2接線の傾きの積が -1", "problem": "放物線 y = x^2 に点 (0, -1) から引いた2本の接線が直交することを示せ。", "solution": "接点での傾き 2t。接線 y = 2tx - t^2 が (0, -1) を通る ⇒ -t^2 = -1 ⇒ t = ±1。傾きは 2 と -2 で積 -4 ≠ -1 等、問題の条件を吟味。", "importance": "A"}, {"id": 97, "field": "数学II", "unit": "微分法", "pattern": "法線の方程式（接線に垂直な直線）", "trigger": "点 (t, f(t)) における法線の傾きは -1 / f'(t) （f'(t) ≠ 0 のとき）。y - f(t) = -1/f'(t) (x - t)", "problem": "放物線 y = x^2 上の点 (1, 1) における法線の方程式を求めよ。", "solution": "y' = 2x より接線の傾きは 2。よって法線の傾きは -1/2。方程式は y - 1 = -1/2 (x - 1) ⇒ y = -1/2 x + 3/2。", "importance": "B"}, {"id": 98, "field": "数学II", "unit": "積分法", "pattern": "不定積分の計算と境界条件からの関数決定", "trigger": "∫ f'(x) dx = f(x) + C。与えられた初期条件 f(x0) = y0 から積分定数 C を決定する", "problem": "導関数が f'(x) = 6x^2 - 4x + 1 で、f(1) = 3 を満たす関数 f(x) を求めよ。", "solution": "f(x) = ∫ (6x^2 - 4x + 1) dx = 2x^3 - 2x^2 + x + C。f(1) = 2 - 2 + 1 + C = 3 より C = 2。よって f(x) = 2x^3 - 2x^2 + x + 2。", "importance": "B"}, {"id": 99, "field": "数学II", "unit": "積分法", "pattern": "偶関数・奇関数の定積分の簡略化", "trigger": "区間 [-a, a] において 奇関数 f(-x)=-f(x) の積分は 0、偶関数 f(-x)=f(x) の積分は 2 ∫_0^a f(x)dx", "problem": "定積分 ∫_{-2}^2 (5x^3 - 3x^2 + 2x - 4) dx の値を能率よく計算せよ。", "solution": "奇数次 5x^3, 2x は 0。偶数次 -3x^2, -4 のみ残し 2 ∫_0^2 (-3x^2 - 4) dx = 2 [-x^3 - 4x]_0^2 = 2(-8 - 8) = -32。", "importance": "S"}, {"id": 100, "field": "数学II", "unit": "積分法", "pattern": "絶対値付き関数の定積分と面積計算", "trigger": "絶対値の中身の正負が切り替わる境界 x=c で積分区間を分割し、絶対値を外して積分", "problem": "定積分 ∫_0^3 |x^2 - 2x| dx を計算せよ。", "solution": "x^2 - 2x = 0 より x=0, 2。0≦x≦2 では -(x^2-2x)、2≦x≦3 では x^2-2x に区間分割して計算。1/6公式併用で高速化可能。", "importance": "S"}, {"id": 101, "field": "数学II", "unit": "積分法", "pattern": "2つの放物線で囲まれた面積の計算", "trigger": "2曲線の交点 α, β を求め、S = ∫_α^β (上 - 下) dx = (|a1 - a2| / 6)(β - α)^3 公式を適用", "problem": "放物線 y = x^2 と y = -x^2 + 2x + 4 で囲まれた部分の面積 S を求めよ。", "solution": "交点 2x^2 - 2x - 4 = 0 ⇒ x^2 - x - 2 = 0 より α = -1, β = 2。S = (2/6)(2 - (-1))^3 = 1/3 × 27 = 9。", "importance": "S"}, {"id": 102, "field": "数学II", "unit": "積分法", "pattern": "放物線と2接線で囲まれた面積の性質（1/12公式と1:2比率）", "trigger": "2接線の交点のx座標は2接点のx座標の中点。面積は放物線と弦の囲む面積のちょうど半分(1/2)", "problem": "放物線 y = x^2 上の2点 (α, α^2), (β, β^2) における2本の接線と放物線で囲まれた面積 S。", "solution": "2接線の交点は x = (α+β)/2。面積 S = (a/12)(β - α)^3。弦と放物線の面積 S_弦 = (a/6)(β-α)^3 の半分。", "importance": "S"}, {"id": 103, "field": "数学II", "unit": "積分法", "pattern": "面積の2等分問題（放物線と直線）", "trigger": "全体の面積 S を求め、直線 y = mx が分割する上側（または下側）の面積が S/2 となる方程式を解く", "problem": "放物線 y = 4x - x^2 と x軸で囲まれた面積を、原点を通る直線 y = ax が2等分する a の値。", "solution": "全体の面積は 1/6 (4)^3 = 32/3。交点 x = 4-a より 1/6 (4-a)^3 = 16/3 ⇒ (4-a)^3 = 32 ⇒ a = 4 - 2 3乗根(4)。", "importance": "S"}, {"id": 104, "field": "数学II", "unit": "積分法", "pattern": "定積分で表された関数の極値（変数型微分）", "trigger": "d/dx ∫_a^x f(t)dt = f(x)。導関数 f(x) の符号変化から極値を求める", "problem": "関数 g(x) = ∫_1^x (t^2 - 3t + 2) dt の極大値および極小値を求めよ。", "solution": "g'(x) = x^2 - 3x + 2 = (x-1)(x-2)。x=1 で極大値 g(1)=0、x=2 で極小値 g(2) = ∫_1^2 (t^2-3t+2)dt = -1/6。", "importance": "S"}, {"id": 105, "field": "数学II", "unit": "積分法", "pattern": "定積分の上端・下端がともに x の式である関数", "trigger": "d/dx ∫_{g(x)}^{h(x)} f(t)dt = f(h(x))·h'(x) - f(g(x))·g'(x)", "problem": "関数 F(x) = ∫_x^{x+1} (t^2 - t) dt の最小値を求めよ。", "solution": "F'(x) = ((x+1)^2 - (x+1)) - (x^2 - x) = x^2+x - (x^2-x) = 2x。x=0 で極小かつ最小値 F(0) = ∫_0^1 (t^2-t)dt = -1/6。", "importance": "A"}, {"id": 106, "field": "数学II", "unit": "積分法", "pattern": "3次曲線と接線が囲む面積（1/12公式）", "trigger": "接点 α（重解）ともう1つの交点 β に対し、S = (|a|/12)(β - α)^4", "problem": "曲線 y = x^3 - 3x と、点 (-1, 2) における接線で囲まれる図形の面積 S を求めよ。", "solution": "接線 y = 2。交点 x^3 - 3x - 2 = (x+1)^2 (x-2) = 0 より β=2, α=-1。S = 1/12 (2 - (-1))^4 = 81/12 = 27/4。", "importance": "S"}, {"id": 107, "field": "数学II", "unit": "積分法", "pattern": "放物線と直交する2接線の交点の軌跡（準線）", "trigger": "直交する2接線の傾きの積が -1。解と係数の関係から交点 (X, Y) の関係式を導く", "problem": "放物線 y = x^2 に引いた2本の接線が直交するとき、その交点の軌跡を求めよ。", "solution": "接線 y = 2tx - t^2 が (X, Y) を通る ⇒ t^2 - 2Xt + Y = 0。2解の積 Y = -1/4（直交条件 m1·m2 = (2t1)(2t2) = -1）。軌跡は直線 y = -1/4。", "importance": "A"}, {"id": 108, "field": "数学II", "unit": "複素数と方程式", "pattern": "相反方程式（係数が左右対称な高次方程式）", "trigger": "中央の項 x^2 で両辺を割り、t = x + 1/x とおいて t の2次方程式に帰着させる", "problem": "方程式 x^4 - 4x^3 + 5x^2 - 4x + 1 = 0 を解け。", "solution": "x≠0 より x^2 で割ると (x^2 + 1/x^2) - 4(x + 1/x) + 5 = 0。(t^2 - 2) - 4t + 5 = 0 ⇒ (t-1)(t-3) = 0 より x を解く。", "importance": "A"}, {"id": 109, "field": "数学II", "unit": "複素数と方程式", "pattern": "複2次式の方程式（x^4 + ax^2 + b = 0）", "trigger": "X = x^2 と置くか、平方の差 A^2 - B^2 の形を無理やり作って因数分解する", "problem": "方程式 x^4 + 4 = 0 および x^4 - 7x^2 + 1 = 0 を解け。", "solution": "x^4 + 4 = (x^2 + 2)^2 - 4x^2 = (x^2 + 2x + 2)(x^2 - 2x + 2) = 0。各2次方程式から虚数解を導出。", "importance": "A"}, {"id": 110, "field": "数学II", "unit": "複素数と方程式", "pattern": "1の虚数立方根 ω の性質と高次式の次数下げ", "trigger": "ω^3 = 1, ω^2 + ω + 1 = 0。指数を mod 3 で縮小し、2次式を1次式へ次数下げ", "problem": "x^2 + x + 1 = 0 の解の1つを ω とするとき、ω^100 + ω^50 + 1 の値を求めよ。", "solution": "ω^3 = 1 より ω^100 = (ω^3)^33 · ω = ω、ω^50 = (ω^3)^16 · ω^2 = ω^2。与式 = ω^2 + ω + 1 = 0。", "importance": "S"}, {"id": 111, "field": "数学II", "unit": "式と証明", "pattern": "2変数関数の最大・最小（予選決勝法／1文字固定法）", "trigger": "一方の文字 x を固定（定数視）して y の関数として最小値を求め、最後に x を動かす", "problem": "実数 x, y に対し、式 x^2 - 2xy + 2y^2 - 4y + 5 の最小値を求めよ。", "solution": "x について平方完成: (x - y)^2 + y^2 - 4y + 5 = (x - y)^2 + (y - 2)^2 + 1。x=y=2 のとき最小値 1。", "importance": "S"}, {"id": 112, "field": "数学II", "unit": "式と証明", "pattern": "分数式の値と比例式（k とおく手法）", "trigger": "a/b = c/d = e/f = k とおいて分子を分母の k 倍で表し、代入して k の値を決定", "problem": "x/(y+z) = y/(z+x) = z/(x+y) のとき、この式のとり得る値を求めよ。", "solution": "#ERROR!", "importance": "A"}, {"id": 113, "field": "数学II", "unit": "図形と方程式", "pattern": "弦の中点の軌跡と直線群の通過点", "trigger": "2交点の解と係数の関係から中点座標 (X, Y) を媒介変数 m で表し、m を消去する", "problem": "放物線 y = x^2 と直線 y = m(x - 1) が異なる2点で交わるとき、その線分の中点Mの軌跡。", "solution": "交点の x座標は x^2 - mx + m = 0。中点 X = m/2, Y = m(X - 1)。m = 2X を代入して Y = 2X(X-1)。判別式 D > 0 から X の範囲を決定。", "importance": "A"}, {"id": 114, "field": "数学II", "unit": "図形と方程式", "pattern": "対称点と直線に関する折り返し", "trigger": "2点の中点が直線上にある条件 ＋ 2点を結ぶ直線が直交する条件（傾きの積 = -1）", "problem": "点 P(2, 3) の 直線 x + 2y - 3 = 0 に関する対称点 Q の座標を求めよ。", "solution": "Q(a, b) とおき、PQの中点 ((a+2)/2, (b+3)/2) が直線上にある式と、PQの傾き × (-1/2) = -1 を連立。", "importance": "A"}, {"id": 115, "field": "数学II", "unit": "三角関数", "pattern": "三角方程式の解の個数問題（置換後の変数対応）", "trigger": "t = sin θ (-1 ≦ t ≦ 1) とおいたとき、t の1つの値に対する θ の個数（0≦θ<2π）の対応に注意", "problem": "0 ≦ θ < 2π のとき、方程式 2 cos^2 θ - sin θ + a = 0 の解の個数が4個となる a の範囲。", "solution": "t = sin θ (-1≦t≦1) とおくと 2(1-t^2) - t + a = 0 ⇒ 2t^2 + t - 2 = a。-1 < t < 1 に異なる2解をもつ条件をグラフで求める。", "importance": "S"}, {"id": 116, "field": "数学II", "unit": "三角関数", "pattern": "三角関数の最大・最小（分数関数型・商の形）", "trigger": "y = (sin θ + a) / (cos θ + b) は単位円上の点 (cos θ, sin θ) と定点 (-b, -a) を結ぶ直線の傾き", "problem": "y = (sin θ + 2) / (cos θ + 3) (0 ≦ θ ≦ 2π) の最大値と最小値を求めよ。", "solution": "傾き m とおいて m cos θ - sin θ = 2 - 3m。三角関数の合成 √(m^2+1) sin(θ+α) = 2-3m より |2-3m| ≦ √(m^2+1) を解く。", "importance": "A"}, {"id": 117, "field": "数学II", "unit": "指数・対数", "pattern": "指数・対数不等式の整数解の個数条件", "trigger": "不等式を満たす整数 x がちょうど n 個存在するようなパラメータ a の値の範囲を決定", "problem": "不等式 log_2(x - a) < 3 を満たす整数 x がちょうど5個存在する定数 a の範囲。", "solution": "真数条件 x > a と x - a < 8 より a < x < a + 8。区間幅 8 の中の整数個数を数直線で境界吟味。", "importance": "A"}, {"id": 118, "field": "数学II", "unit": "指数・対数", "pattern": "底にも指数にも未知数 x を含む方程式・不等式", "trigger": "両辺の対数をとる（底 > 1 を推奨）。底が 1 より大きいか小さいか、底 = 1 の場合分け", "problem": "方程式 x^{log_2 x} = 4x を解け。", "solution": "x > 0。両辺の底2の対数をとると (log_2 x)^2 = log_2 4 + log_2 x = 2 + log_2 x。t = log_2 x の2次方程式に帰着。", "importance": "A"}, {"id": 119, "field": "数学II", "unit": "微分法", "pattern": "3次関数の極大値と極小値の積の符号による解の判別", "trigger": "f(x)=0 が異なる3実解 ⇔ 極大値と極小値の積 f(α)·f(β) < 0。重解 ⇔ 積 = 0", "problem": "f(x) = 2x^3 - 3x^2 - 12x + k = 0 が相異なる3つの実数解をもつ条件を積の符号から求めよ。", "solution": "f'(x)=6(x-2)(x+1)。極値は f(-1) = 7+k, f(2) = -20+k。積 (k+7)(k-20) < 0 より -7 < k < 20。", "importance": "S"}, {"id": 120, "field": "数学II", "unit": "微分法", "pattern": "多項式の割り算と微分（重解と導関数の関係）", "trigger": "P(x) が (x-a)^2 で割り切れる ⇔ P(a) = 0 かつ P'(a) = 0", "problem": "整式 x^n - 1 が (x - 1)^2 で割り切れるか判定し、割った余りを求めよ。", "solution": "余りを ax+b とおく。P(1)=0 より a+b=0。微分して P'(1)=a より a=n, b=-n。余りは n(x-1)。", "importance": "A"}, {"id": 121, "field": "数学II", "unit": "微分法", "pattern": "媒介変数で表された曲線の接線の方程式", "trigger": "dy/dx = (dy/dt) / (dx/dt)。媒介変数表示 (x(t), y(t)) の傾きを求め、点と傾きから直線式を導出", "problem": "x = t^2, y = t^3 - t で表される曲線の t=2 における接線の方程式を求めよ。", "solution": "dx/dt = 2t, dy/dt = 3t^2 - 1。t=2 のとき x=4, y=6, 傾き dy/dx = (12-1)/4 = 11/4。y - 6 = 11/4 (x - 4)。", "importance": "B"}, {"id": 122, "field": "数学II", "unit": "積分法", "pattern": "放物線と直線の交点間の距離の最大・最小", "trigger": "弦の長さ公式 L = √(1+m^2) |β - α|。解と係数の関係で |β - α| をパラメータ表示して最小化", "problem": "放物線 y = x^2 と直線 y = 2x + k の交点を結ぶ線分の長さが最小となる k の値を求めよ。", "solution": "交点 x^2 - 2x - k = 0。|β - α| = √(4 + 4k)。実数解条件 k ≧ -1。k=-1 のとき接して長さ 0。", "importance": "B"}, {"id": 123, "field": "数学II", "unit": "積分法", "pattern": "2つの放物線の共通接線と囲まれた面積", "trigger": "共通接線と2放物線の接点を求め、左側半分と右側半分に区間を分割して1/12公式を合算", "problem": "y = x^2 と y = (x-2)^2 の共通接線と2つの放物線で囲まれた領域の面積 S を求めよ。", "solution": "対称性より交点 x=1 で左右等分。各半分は接点と交点の間の積分となり、1/12公式の組み合わせで高速計算。", "importance": "A"}, {"id": 124, "field": "数学II", "unit": "積分法", "pattern": "定積分で定義された関数の最大・最小と導関数の符号", "trigger": "F(x) = ∫_0^x f(t)dt の増減表を F'(x) = f(x) から直接作成して最大・最小を求める", "problem": "F(x) = ∫_0^x (2 - |t - 1|) dt (0 ≦ x ≦ 3) の最大値を求めよ。", "solution": "F'(x) = 2 - |x - 1|。F'(x) = 0 となる x を調べ、増減表の符号変化から極大かつ最大となる x を特定。", "importance": "A"}, {"id": 125, "field": "数学II", "unit": "式と証明", "pattern": "二項係数の性質とパスカルの三角形の応用", "trigger": "nC0 + nC1 + ... + nCn = 2^n、nC0 - nC1 + ... = 0。(1+x)^n の展開式に x=1, -1 を代入", "problem": "和 10C1 + 10C3 + 10C5 + 10C7 + 10C9 の値を求めよ。", "solution": "奇数番目の二項係数の和は 2^{n-1}。n=10 より 2^9 = 512。", "importance": "B"}, {"id": 126, "field": "数学B", "unit": "数列", "pattern": "階差数列を用いた一般項の決定", "trigger": "b_n = a_{n+1} - a_n のとき a_n = a_1 + ∑_{k=1}^{n-1} b_k (n ≧ 2)。n=1 の成立確認を忘れない", "problem": "数列 2, 3, 7, 16, 32, ... の一般項 a_n を求めよ。", "solution": "階差は 1, 4, 9, 16, ... 即ち b_k = k^2。n ≧ 2 のとき a_n = 2 + ∑_{k=1}^{n-1} k^2 = 2 + 1/6 (n-1)n(2n-1)。", "importance": "S"}, {"id": 127, "field": "数学B", "unit": "数列", "pattern": "部分分数分解を利用した分数数列の和", "trigger": "1 / (k(k+1)) = 1/k - 1/(k+1)。途中項が次々と相殺して最初と最後だけが残るテレスコーピング和", "problem": "和 S_n = ∑_{k=1}^n 1 / (k(k+2)) を求めよ。", "solution": "1/(k(k+2)) = 1/2 [1/k - 1/(k+2)]。項を書き出すと前2項と後2項が残り、整理して和を導出。", "importance": "S"}, {"id": 128, "field": "数学B", "unit": "数列", "pattern": "ルートを含む数列の和（有理化による相殺型）", "trigger": "分母の有理化により 1 / (√(k+1) + √k) = √(k+1) - √k と変形し、隣り合う項を打ち消す", "problem": "和 S_n = ∑_{k=1}^n 1 / (√(k+2) + √(k+1)) を求めよ。", "solution": "有理化すると (√(k+2) - √(k+1)) / 1。k=1 から n まで加えると S_n = √(n+2) - √2。", "importance": "S"}, {"id": 129, "field": "数学B", "unit": "数列", "pattern": "数列の和 S_n と一般項 a_n の漸化式", "trigger": "a_{n+1} = S_{n+1} - S_n を用いて S_n のみの漸化式または a_n のみの漸化式に統一する", "problem": "初項 a_1 = 1 で、a_{n+1} = 2 S_n + 1 を満たす数列の一般項 a_n を求めよ。", "solution": "a_{n+2} - a_{n+1} = 2(S_{n+1} - S_n) = 2 a_{n+1} ⇒ a_{n+2} = 3 a_{n+1}。公比 3 の等比数列に帰着。", "importance": "S"}, {"id": 130, "field": "数学B", "unit": "数列", "pattern": "階差型漸化式 a_{n+1} = a_n + f(n)", "trigger": "a_{n+1} - a_n = f(n) より 数列 {a_n} の階差数列が f(n) であることを利用して ∑ 計算", "problem": "a_1 = 1, a_{n+1} = a_n + 2n + 3 で定義される数列の一般項 a_n を求めよ。", "solution": "n ≧ 2 のとき a_n = 1 + ∑_{k=1}^{n-1} (2k+3) = 1 + 2·1/2(n-1)n + 3(n-1) = n^2 + 2n - 2。", "importance": "S"}, {"id": 131, "field": "数学B", "unit": "数列", "pattern": "指数項を含む漸化式 a_{n+1} = p a_n + q r^n", "trigger": "両辺を r^{n+1} で割り、b_n = a_n / r^n とおいて等差型または基本型漸化式に帰着", "problem": "a_1 = 1, a_{n+1} = 2 a_n + 3^n で定められる数列の一般項 a_n を求めよ。", "solution": "両辺を 3^{n+1} で割ると a_{n+1}/3^{n+1} = 2/3 (a_n/3^n) + 1/3。b_n = a_n/3^n とおくと基本型漸化式になる。", "importance": "S"}, {"id": 132, "field": "数学B", "unit": "数列", "pattern": "多項式を含む漸化式 a_{n+1} = p a_n + q n + r", "trigger": "a_{n+1} - (A(n+1) + B) = p(a_n - (An + B)) となる未定係数 A, B を定めて等比数列を作る", "problem": "a_1 = 2, a_{n+1} = 3 a_n + 4n で定められる数列の一般項 a_n を求めよ。", "solution": "a_{n+1} + 2(n+1) + 1 = 3(a_n + 2n + 1) と変形。数列 {a_n + 2n + 1} は初項 5、公比 3 の等比数列。", "importance": "S"}, {"id": 133, "field": "数学B", "unit": "数列", "pattern": "隣接3項間漸化式 a_{n+2} + p a_{n+1} + q a_n = 0", "trigger": "特性方程式 t^2 + pt + q = 0 の解 α, β を用いて a_{n+2} - α a_{n+1} = β(a_{n+1} - α a_n) と変形", "problem": "a_1 = 1, a_2 = 3, a_{n+2} - 5 a_{n+1} + 6 a_n = 0 の一般項を求めよ。", "solution": "t^2 - 5t + 6 = 0 より t = 2, 3。a_{n+1} - 2a_n = 3^{n-1}(a_2 - 2a_1) と a_{n+1} - 3a_n = 2^{n-1}(a_2 - 3a_1) を連立。", "importance": "S"}, {"id": 134, "field": "数学B", "unit": "数列", "pattern": "連立漸化式の解法（対称和・差 または 1文字消去）", "trigger": "x_{n+1} ± y_{n+1} を作って等比数列にするか、y_n を消去して隣接3項間漸化式を作る", "problem": "a_1=1, b_1=2, a_{n+1} = 2a_n + b_n, b_{n+1} = a_n + 2b_n の一般項 a_n, b_n を求めよ。", "solution": "和をとると a_{n+1}+b_{n+1} = 3(a_n+b_n)、差をとると a_{n+1}-b_{n+1} = a_n-b_n。2式を加減して a_n, b_n を分離。", "importance": "S"}, {"id": 135, "field": "数学B", "unit": "数列", "pattern": "対数をとる漸化式 a_{n+1} = p a_n^q", "trigger": "すべての項が正であることを確認し、両辺の対数をとって b_n = log a_n の基本漸化式に帰着", "problem": "a_1 = 2, a_{n+1} = 4 a_n^2 で定められる数列の一般項 a_n を求めよ。", "solution": "a_n > 0。両辺の底2の対数をとると log_2 a_{n+1} = log_2 4 + 2 log_2 a_n = 2 + 2 log_2 a_n。b_n = log_2 a_n とおく。", "importance": "A"}, {"id": 136, "field": "数学B", "unit": "数列", "pattern": "格子点の個数問題（領域内の整数点の個数の総和）", "trigger": "直線 x = k または y = k 上の格子点の個数を k で表し、k について ∑ 計算を実行する", "problem": "放物線 y = x^2 と直線 y = n^2 および y軸で囲まれた領域内の格子点の個数を求めよ。", "solution": "x = k (0 ≦ k ≦ n) 上の y の個数は n^2 - k^2 + 1。k=0 から n まで足し合わせて公式 ∑ k^2 を適用。", "importance": "S"}, {"id": 137, "field": "数学B", "unit": "数列", "pattern": "数学的帰納法（等式の証明）", "trigger": "(1) n=1 での成立を示す (2) n=k での成立を仮定し n=k+1 での成立を導く（目標の形を明示）", "problem": "すべての自然数 n について 1 + 2 + ... + n = 1/2 n(n+1) が成り立つことを証明せよ。", "solution": "(1) n=1 で 左辺=1, 右辺=1 で成立。(2) n=k で仮定し、両辺に (k+1) を加えて 1/2(k+1)(k+2) を導出。", "importance": "S"}, {"id": 138, "field": "数学B", "unit": "数列", "pattern": "数学的帰納法（不等式の証明）", "trigger": "n=k での仮定 A_k > B_k を用いて、A_{k+1} - B_{k+1} > 0 を示す（仮定の差を組み込む）", "problem": "n ≧ 3 のとき 不等式 2^n > 2n + 1 が成り立つことを証明せよ。", "solution": "(1) n=3 で 8 > 7 で成立。(2) n=k で 2^k > 2k+1 を仮定。2^{k+1} - (2(k+1)+1) = 2·2^k - (2k+3) > 2(2k+1) - (2k+3) = 2k-1 > 0。", "importance": "S"}, {"id": 139, "field": "数学B", "unit": "数列", "pattern": "数学的帰納法（整数の割り切れ・倍数の証明）", "trigger": "n=k+1 の式から n=k の式を括り出し、残りの項が指定の倍数になることを示す", "problem": "すべての自然数 n に対し、3^{2n} - 1 は 8 の倍数であることを数学的帰納法で証明せよ。", "solution": "3^{2(k+1)} - 1 = 9·3^{2k} - 1 = 8·3^{2k} + (3^{2k} - 1)。第1項は8の倍数、第2項は帰納法の仮定より8の倍数。", "importance": "S"}, {"id": 140, "field": "数学B", "unit": "数列", "pattern": "フィボナッチ数列の一般項と性質", "trigger": "a_1=1, a_2=1, a_{n+2} = a_{n+1} + a_n。特性方程式 t^2 - t - 1 = 0 の解 (1±√5)/2 を利用", "problem": "フィボナッチ数列の連続する2項 a_n, a_{n+1} の比の極限 lim a_{n+1}/a_n が黄金比 (1+√5)/2 となることの導出。", "solution": "隣接3項間漸化式からビネの公式 a_n = 1/√5 [ ((1+√5)/2)^n - ((1-√5)/2)^n ] を導き比の極限を計算。", "importance": "A"}, {"id": 141, "field": "数学B", "unit": "ベクトル", "pattern": "ベクトルの成分表示と内積・大きさの計算", "trigger": "a = (x1, y1), b = (x2, y2) のとき |a| = √(x1^2+y1^2), a·b = x1 x2 + y1 y2", "problem": "a = (2, 1), b = (x, -3) が垂直であるときの実数 x の値、および平行であるときの x の値。", "solution": "垂直 ⇔ 2x + 1(-3) = 0 ⇒ x = 3/2。平行 ⇔ 2(-3) - 1(x) = 0 ⇒ x = -6。", "importance": "S"}, {"id": 142, "field": "数学B", "unit": "ベクトル", "pattern": "位置ベクトルと三角形の重心・内心の公式", "trigger": "重心 G = (a + b + c)/3。内心 I = (a A + b B + c C) / (a + b + c) （対辺長が係数）", "problem": "△ABCにおいて辺の長さが BC=a, CA=b, AB=c のとき、内心Iの位置ベクトルを導出せよ。", "solution": "角の二等分線による内分点Dを求め、さらに線分ADを内分する比を計算して公式を導く。", "importance": "A"}, {"id": 143, "field": "数学B", "unit": "ベクトル", "pattern": "3点が同一直線上にある条件（共線条件）", "trigger": "点Cが直線AB上にある ⇔ AC = k AB （または c = (1-t)a + tb）", "problem": "△OABにおいて OAを2:3に内分する点C、OBを1:2に内分する点Dの交点PとOが同一直線上にある証明。", "solution": "ベクトル OP を OA, OB で表し、OP = k OE となる実数 k が存在することを示す。", "importance": "S"}, {"id": 144, "field": "数学B", "unit": "ベクトル", "pattern": "三角形の面積公式（ベクトルの内積表示）", "trigger": "S = 1/2 √(|a|^2 |b|^2 - (a·b)^2) = 1/2 |x1 y2 - x2 y1|", "problem": "3点 O(0,0), A(3, 1), B(1, 4) を頂点とする三角形の面積 S を求めよ。", "solution": "S = 1/2 |3(4) - 1(1)| = 1/2 |12 - 1| = 11/2。内積公式からも同一結果を導出可能。", "importance": "S"}, {"id": 145, "field": "数学B", "unit": "ベクトル", "pattern": "外心の位置ベクトル（垂直二等分線と内積）", "trigger": "外心Oは各頂点からの距離が等しい |OA|=|OB|=|OC|。または OA·AB = 1/2 |AB|^2", "problem": "△ABCにおいて AB=5, BC=6, CA=7 の外心Pに対し、AP を AB と AC で表せ。", "solution": "AP = s AB + t AC とおき、AP·AB = 1/2 |AB|^2 かつ AP·AC = 1/2 |AC|^2 の連立方程式を解く。", "importance": "A"}, {"id": 146, "field": "数学B", "unit": "ベクトル", "pattern": "垂心の位置ベクトル（直交条件の内積ゼロ）", "trigger": "垂心Hに対し AH ⊥ BC (AH·BC = 0) かつ BH ⊥ AC (BH·AC = 0)", "problem": "△ABCの垂心Hについて、OH を OA, OB, OC で表す手順。", "solution": "AH·(OC - OB) = 0 かつ BH·(OC - OA) = 0 から係数を連立して OH を決定。", "importance": "A"}, {"id": 147, "field": "数学B", "unit": "ベクトル", "pattern": "円のベクトル方程式（中心と半径／直径の両端）", "trigger": "|p - c| = r （中心c, 半径r）、(p - a)·(p - b) = 0 （ABを直径とする円）", "problem": "点 A(a), B(b) に対し、(p - a)·(p - b) = 0 がABを直径の両端とする円を表すことの証明。", "solution": "AP ⊥ BP または P=A, B であることから、円周角が90°となる点の軌跡が円であることを示す。", "importance": "A"}, {"id": 148, "field": "数学B", "unit": "ベクトル", "pattern": "空間の共面条件（4点が同一平面上にある条件）", "trigger": "点Pが平面ABC上 ⇔ AP = s AB + t AC ⇔ OP = s OA + t OB + u OC (s+t+u=1)", "problem": "4点 O, A, B, C に対し、点Pが平面ABC上にあるとき、OP の係数和が 1 になることを利用する問題。", "solution": "未知の点Pの位置ベクトルを基準ベクトルで表し、係数和 = 1 から交点や分点を決定。", "importance": "S"}, {"id": 149, "field": "数学B", "unit": "ベクトル", "pattern": "空間ベクトルの内積となす角・直交", "trigger": "a·b = x1 x2 + y1 y2 + z1 z2。cos θ = (a·b) / (|a||b|)。直交 ⇔ 内積 = 0", "problem": "空間の2ベクトル a = (1, 2, -1), b = (2, -1, 0) のなす角 θ を求めよ。", "solution": "a·b = 1(2) + 2(-1) + (-1)(0) = 0。よって cos θ = 0 より θ = 90°（直交）。", "importance": "S"}, {"id": 150, "field": "数学B", "unit": "ベクトル", "pattern": "正四面体の対称性と内接球・外接球の半径", "trigger": "重心Gが中心。一辺 a の正四面体の高さ h = √(2/3) a、体積 V = (√2 / 12) a^3", "problem": "一辺の長さが 6 の正四面体ABCDの体積 V および内接球の半径 r を求めよ。", "solution": "底面 △BCD の重心Hに頂点Aから垂線。高さ AH = √(6^2 - (2√3)^2) = √24 = 2√6。V = 1/3 S h。V = 4(1/3 S r) より r を算出。", "importance": "A"}, {"id": 151, "field": "数学B", "unit": "ベクトル", "pattern": "空間における直線の方程式と媒介変数", "trigger": "直線上の任意の点 P は p = a + t d （d は方向ベクトル）。各座標を媒介変数 t で表す", "problem": "2点 A(1, 2, 3), B(2, -1, 4) を通る直線と xy 平面との交点の座標を求めよ。", "solution": "直線式 (x-1)/1 = (y-2)/(-3) = (z-3)/1 = t。xy平面上では z=0 より t=-3。x=-2, y=11。交点 (-2, 11, 0)。", "importance": "S"}, {"id": 152, "field": "数学B", "unit": "ベクトル", "pattern": "空間における平面の方程式と法線ベクトル", "trigger": "点 (x0, y0, z0) を通り法線ベクトル n=(a, b, c) をもつ平面: a(x-x0) + b(y-y0) + c(z-z0) = 0", "problem": "点 (1, 1, 1) を通り法線ベクトル n=(2, -3, 1) をもつ平面の方程式を求めよ。", "solution": "2(x - 1) - 3(y - 1) + 1(z - 1) = 0 より 2x - 3y + z = 0。", "importance": "A"}, {"id": 153, "field": "数学B", "unit": "ベクトル", "pattern": "空間における点と平面の距離公式", "trigger": "点 (x1, y1, z1) と平面 ax+by+cz+d=0 の距離 D = |a x1 + b y1 + c z1 + d| / √(a^2+b^2+c^2)", "problem": "点 (1, 2, 3) と平面 2x - y + 2z - 1 = 0 の距離を求めよ。", "solution": "D = |2(1) - 1(2) + 2(3) - 1| / √(2^2 + (-1)^2 + 2^2) = |5| / √9 = 5/3。", "importance": "S"}, {"id": 154, "field": "数学B", "unit": "ベクトル", "pattern": "球面の方程式と平面による切り口（円）", "trigger": "(x-a)^2 + (y-b)^2 + (z-c)^2 = r^2。中心と平面の距離 d と半径 r から切り口の半径 √(r^2 - d^2)", "problem": "球面 x^2 + y^2 + z^2 = 9 を平面 z = 2 で切ったときの切り口の円の半径と中心を求めよ。", "solution": "中心 (0,0,0) と平面 z=2 の距離 d=2。切り口の半径 = √(9 - 2^2) = √5。切り口の中心 (0, 0, 2)。", "importance": "A"}, {"id": 155, "field": "数学B", "unit": "ベクトル", "pattern": "空間における三角形の面積と外積的考え方", "trigger": "空間の2ベクトル a, b に対し、S = 1/2 √(|a|^2 |b|^2 - (a·b)^2) を成分から正確に計算", "problem": "3点 A(1,0,1), B(0,2,2), C(2,3,0) を頂点とする △ABC の面積を求めよ。", "solution": "AB = (-1, 2, 1), AC = (1, 3, -1)。|AB|^2 = 6, |AC|^2 = 11, AB·AC = -1+6-1=4。S = 1/2 √(66 - 16) = 1/2 √50 = 5√2/2。", "importance": "S"}, {"id": 156, "field": "数学B", "unit": "ベクトル", "pattern": "四面体の体積と垂線の長さ（底面積×高さ÷3）", "trigger": "底面の面積 S を求め、頂点から底面への垂線の足Hを求めて高さ h=|PH| を算出し V=1/3 S h", "problem": "O(0,0,0), A(1,0,0), B(0,2,0), C(0,0,3) を頂点とする四面体OABCの体積を求めよ。", "solution": "底面 △OAB は直角三角形で面積 1/2×1×2 = 1。高さ OC=3。体積 V = 1/3 × 1 × 3 = 1。", "importance": "S"}, {"id": 157, "field": "数学B", "unit": "ベクトル", "pattern": "空間における線分の正射影と角度", "trigger": "直線と平面のなす角 θ は、直線の方向ベクトルと平面の法線ベクトルのなす角 α と θ = 90° - α の関係", "problem": "直線 AB が xy 平面となす角 θ の大きさをベクトルを用いて求めよ。", "solution": "方向ベクトルと法線ベクトル (0, 0, 1) の内積から cos(90°-θ) = sin θ を求めて θ を算出。", "importance": "B"}, {"id": 158, "field": "数学B", "unit": "ベクトル", "pattern": "空間における最短距離（ねじれの位置にある2直線間の距離）", "trigger": "共通垂線ベクトル n が両方の直線の方向ベクトルと直交 (n·d1=0, n·d2=0) することを利用", "problem": "空間内のねじれの位置にある2直線 l, m の最短距離を求めよ。", "solution": "l上の点P(s), m上の点Q(t) に対し、PQ が l と m の両方に垂直となる条件から s, t を連立。", "importance": "A"}, {"id": 159, "field": "数学B", "unit": "ベクトル", "pattern": "空間ベクトルの対称点と鏡映", "trigger": "平面に関する点 P の対称点 Q: 線分PQの中点が平面上にあり、ベクトルPQが法線ベクトルと平行", "problem": "点 P(2, -1, 3) の平面 x + y + z = 1 に関する対称点 Q の座標を求めよ。", "solution": "Q = P + t n とおき、中点 (P+Q)/2 が平面上にあることからパラメータ t を解く。", "importance": "B"}, {"id": 160, "field": "数学B", "unit": "ベクトル", "pattern": "空間における2球面の交線（円）と共通接平面", "trigger": "2球面の差をとることで交線を含む平面の方程式 ax + by + cz + d = 0 を導出", "problem": "球面 S1: x^2+y^2+z^2=4 と S2: (x-1)^2+y^2+z^2=1 の交線を含む平面を求めよ。", "solution": "S1 - S2 を計算: x^2 - ((x-1)^2) = 4 - 1 ⇒ 2x - 1 = 3 ⇒ 2x = 4 ⇒ x = 2。", "importance": "B"}, {"id": 161, "field": "数学B", "unit": "統計的な推測", "pattern": "確率変数の期待値（平均）・分散・標準偏差の計算", "trigger": "E(X) = ∑ x_i p_i、V(X) = E(X^2) - (E(X))^2、σ(X) = √(V(X))。線形性 E(aX+b) = aE(X)+b", "problem": "サイコロを1回投げたときの出る目を X とするとき、X の期待値 E(X) と分散 V(X) を求めよ。", "solution": "E(X) = (1+2+3+4+5+6)/6 = 7/2。E(X^2) = 91/6。V(X) = 91/6 - 49/4 = 35/12。", "importance": "S"}, {"id": 162, "field": "数学B", "unit": "統計的な推測", "pattern": "二項分布 B(n, p) の期待値と分散", "trigger": "期待値 E(X) = np、分散 V(X) = np(1-p)。反復試行の成功回数の分布", "problem": "サイコロを180回投げるとき、1の目が出る回数 X の期待値と標準偏差を求めよ。", "solution": "X ~ B(180, 1/6)。E(X) = 180 × 1/6 = 30。V(X) = 180 × 1/6 × 5/6 = 25。σ(X) = √25 = 5。", "importance": "S"}, {"id": 163, "field": "数学B", "unit": "統計的な推測", "pattern": "正規分布 N(m, σ^2) の標準化と確率計算", "trigger": "Z = (X - m) / σ により標準正規分布 N(0, 1) に変換し、正規分布表から確率を読み取る", "problem": "X が正規分布 N(50, 10^2) に従うとき、P(X ≧ 65) の確率を求めよ。", "solution": "Z = (65 - 50)/10 = 1.5。P(Z ≧ 1.5) = 0.5 - P(0 ≦ Z ≦ 1.5) = 0.5 - 0.4332 = 0.0668。", "importance": "S"}, {"id": 164, "field": "数学B", "unit": "統計的な推測", "pattern": "標本平均の分布と中心極限定理", "trigger": "母集団(平均m, 標準偏差σ)から抽出した大きさnの標本平均 X_bar は 近似的に N(m, σ^2/n) に従う", "problem": "母標準偏差 12 の母集団から大きさ 36 の無作為標本を抽出するとき、標本平均の標準偏差を求めよ。", "solution": "σ(X_bar) = σ / √n = 12 / √36 = 12 / 6 = 2。", "importance": "S"}, {"id": 165, "field": "数学B", "unit": "統計的な推測", "pattern": "母平均の信頼区間（95%信頼区間）の推定と仮説検定", "trigger": "信頼区間: [X_bar - 1.96 · σ/√n , X_bar + 1.96 · σ/√n]。帰無仮説の棄却域判定", "problem": "標本平均 100, 標本サイズ 100, 母標準偏差 15 のとき、母平均 m に対する 95% 信頼区間を求めよ。", "solution": "1.96 × 15 / √100 = 1.96 × 1.5 = 2.94。信頼区間は [100 - 2.94, 100 + 2.94] = [97.06, 102.94]。", "importance": "S"}, {"id": 166, "field": "数学C", "unit": "複素数平面", "pattern": "複素数の極形式と絶対値・偏角の計算", "trigger": "z = r(cos θ + i sin θ)。積の偏角は和 arg(z1 z2) = arg(z1) + arg(z2)、商は差", "problem": "z1 = 2(cos π/3 + i sin π/3), z2 = 3(cos π/6 + i sin π/6) の積 z1 z2 および商 z1/z2 を求めよ。", "solution": "z1 z2 = 6(cos π/2 + i sin π/2) = 6i。z1/z2 = 2/3 (cos π/6 + i sin π/6) = √3/3 + 1/3 i。", "importance": "S"}, {"id": 167, "field": "数学C", "unit": "複素数平面", "pattern": "ド・モアブルの定理と三角関数のn倍角の公式", "trigger": "[r(cos θ + i sin θ)]^n = r^n (cos nθ + i sin nθ)。(cos θ + i sin θ)^3 展開から3倍角を導出", "problem": "(1 + √3 i)^6 の値をド・モアブルの定理を用いて計算せよ。", "solution": "1 + √3 i = 2(cos π/3 + i sin π/3)。6乗すると 2^6 (cos 2π + i sin 2π) = 64(1 + 0) = 64。", "importance": "S"}, {"id": 168, "field": "数学C", "unit": "複素数平面", "pattern": "方程式 z^n = 1 の解と単位円上の正n角形の頂点", "trigger": "解は z_k = cos(2kπ/n) + i sin(2kπ/n) (k=0,1,...,n-1)。解の総和 ∑ z_k = 0", "problem": "方程式 z^5 = 1 の解を複素数平面上に図示し、解の和が 0 になることを示せ。", "solution": "単位円を5等分する正五角形の各頂点。等比数列の和公式より (z^5 - 1)/(z - 1) = 0 から和は 0。", "importance": "A"}, {"id": 169, "field": "数学C", "unit": "複素数平面", "pattern": "複素数平面上の直線・垂直二等分線の方程式", "trigger": "|z - α| = |z - β| は 2点 α, β を結ぶ線分の垂直二等分線。α_bar z + α z_bar + c = 0", "problem": "方程式 |z - 2| = |z - 4i| の表す図形を複素数平面上に求めよ。", "solution": "点 (2, 0) と点 (0, 4) の垂直二等分線。傾き 1/2、中点 (1, 2) を通る直線 y - 2 = 1/2(x - 1)。", "importance": "S"}, {"id": 170, "field": "数学C", "unit": "複素数平面", "pattern": "複素数平面上の円の方程式（中心とアポロニウスの円）", "trigger": "|z - α| = r （中心α, 半径r）、|z - α| = k |z - β| (k ≠ 1) はアポロニウスの円", "problem": "方程式 |z - 3| = 2 |z| の表す図形を求めよ。", "solution": "両辺2乗: |z-3|^2 = 4|z|^2 ⇒ (z-3)(z_bar-3) = 4 z z_bar ⇒ 3|z|^2 + 3(z+z_bar) - 9 = 0 ⇒ |z+1|^2 = 4。中心 -1, 半径 2 の円。", "importance": "S"}, {"id": 171, "field": "数学C", "unit": "複素数平面", "pattern": "複素数と三角形の形状決定", "trigger": "(α - γ) / (β - γ) の絶対値（辺の比）と偏角（なす角）から正三角形・直角二等辺を特定", "problem": "複素数 α, β, γ が α^2 + β^2 + γ^2 - αβ - βγ - γα = 0 を満たすとき、△ABCの形状を求めよ。", "solution": "(α - β)/(γ - β) = cos(±π/3) + i sin(±π/3) と変形でき、3辺が等しく角が60°より 正三角形。", "importance": "A"}, {"id": 172, "field": "数学C", "unit": "複素数平面", "pattern": "複素数の実数条件・純虚数条件", "trigger": "z が実数 ⇔ z = z_bar。z が純虚数 ⇔ z + z_bar = 0 かつ z ≠ 0", "problem": "(z - 1)/(z + 1) が純虚数であるとき、点 z の描く軌跡を求めよ。", "solution": "arg((z-1)/(z+1)) = ±π/2 より、-1 と 1 を結ぶ線分を直径とする円（ただし ±1 を除く）。", "importance": "S"}, {"id": 173, "field": "数学C", "unit": "複素数平面", "pattern": "複素数平面上の変換・反転 w = 1/z", "trigger": "z = r e^{iθ} に対し w = (1/r) e^{-iθ}。原点を通らない円は原点を通る円または直線に移る", "problem": "点 z が円 |z - 1| = 1 (z≠0) 上を動くとき、点 w = 1/z の軌跡を求めよ。", "solution": "z = 1/w を代入: |1/w - 1| = 1 ⇒ |1 - w| = |w| ⇒ 点0 と点1 の垂直二等分線（直線 Re(w) = 1/2）。", "importance": "A"}, {"id": 174, "field": "数学C", "unit": "複素数平面", "pattern": "複素数における三角不等式とその活用", "trigger": "||z| - |w|| ≦ |z + w| ≦ |z| + |w|。最大値・最小値の評価に幾何的解釈を併用", "problem": "|z - 3| ≦ 1 のとき、|z| の最大値と最小値を求めよ。", "solution": "三角不等式より |z| = |(z - 3) + 3| ≦ |z - 3| + 3 ≦ 1 + 3 = 4（最大値）。最小値は 3 - 1 = 2。", "importance": "A"}, {"id": 175, "field": "数学C", "unit": "複素数平面", "pattern": "複素数平面における回転移動と平行移動の合成", "trigger": "点 α を中心に角 θ 回転: w - α = (cos θ + i sin θ)(z - α)", "problem": "点 A(1 + 2i) を中心として、点 P(4 + 6i) を 90° 回転させた点 Q の座標を求めよ。", "solution": "Q - A = i (P - A)。P - A = 3 + 4i。i(3 + 4i) = -4 + 3i。Q = (1 + 2i) + (-4 + 3i) = -3 + 5i。", "importance": "S"}, {"id": 176, "field": "数学C", "unit": "二次曲線", "pattern": "放物線の定義（焦点と準線）と標準形", "trigger": "y^2 = 4px。焦点 F(p, 0)、準線 x = -p。放物線上の任意の点Pに対し PF = PH (Hは準線への垂線の足)", "problem": "焦点が (2, 0)、準線が x = -2 である放物線の方程式を求めよ。", "solution": "定義より p = 2。y^2 = 4(2)x ⇒ y^2 = 8x。", "importance": "S"}, {"id": 177, "field": "数学C", "unit": "二次曲線", "pattern": "楕円の標準形と焦点・長軸・短軸の長さ", "trigger": "x^2/a^2 + y^2/b^2 = 1 (a > b > 0)。焦点 (±c, 0) (c = √(a^2-b^2))。距離の和 2a", "problem": "楕円 4x^2 + 9y^2 = 36 の焦点の座標、長軸の長さ、短軸の長さを求めよ。", "solution": "36で割ると x^2/9 + y^2/4 = 1。a=3, b=2。長軸長 6, 短軸長 4。c = √(9-4) = √5。焦点 (±√5, 0)。", "importance": "S"}, {"id": 178, "field": "数学C", "unit": "二次曲線", "pattern": "双曲線の標準形と焦点・漸近線の方程式", "trigger": "x^2/a^2 - y^2/b^2 = 1。焦点 (±c, 0) (c = √(a^2+b^2))。漸近線 y = ±(b/a)x。距離の差 2a", "problem": "双曲線 x^2/16 - y^2/9 = 1 の焦点の座標および漸近線の方程式を求めよ。", "solution": "a=4, b=3。c = √(16+9) = 5。焦点 (±5, 0)。漸近線は y = ±(3/4)x。", "importance": "S"}, {"id": 179, "field": "数学C", "unit": "二次曲線", "pattern": "2次曲線の接線の方程式の公式", "trigger": "x^2 → x0 x, y^2 → y0 y, x → (x+x0)/2, y → (y+y0)/2 を代入して接線式を一発導出", "problem": "楕円 x^2/8 + y^2/2 = 1 上の点 (2, 1) における接線の方程式を求めよ。", "solution": "公式より 2x/8 + 1y/2 = 1 ⇒ x/4 + y/2 = 1 ⇒ x + 2y - 4 = 0。", "importance": "S"}, {"id": 180, "field": "数学C", "unit": "二次曲線", "pattern": "2次曲線と直線の共有点・弦の長さと中点の軌跡", "trigger": "連立して2次方程式を作り判別式 D で共有点の個数判定。解と係数の関係で中点座標を算出", "problem": "楕円 x^2 + 4y^2 = 4 と直線 y = x + k が異なる2点で交わるときの k の範囲と中点の軌跡。", "solution": "代入して 5x^2 + 8kx + 4k^2 - 4 = 0。D/4 = 16k^2 - 5(4k^2-4) > 0。中点 X = -4k/5, Y = X + k から k を消去。", "importance": "S"}, {"id": 181, "field": "数学C", "unit": "二次曲線", "pattern": "2次曲線の媒介変数表示（三角関数と双曲線関数）", "trigger": "楕円: x = a cos θ, y = b sin θ。双曲線: x = a / cos θ, y = b tan θ", "problem": "楕円 x^2/16 + y^2/9 = 1 上の点における 3x + 4y の最大値と最小値を求めよ。", "solution": "x = 4 cos θ, y = 3 sin θ とおく。3x + 4y = 12 cos θ + 12 sin θ = 12√2 sin(θ + π/4)。最大値 12√2, 最小値 -12√2。", "importance": "S"}, {"id": 182, "field": "数学C", "unit": "二次曲線", "pattern": "2次曲線の極方程式と離心率 e による統一的定義", "trigger": "r = l / (1 - e cos θ)。e < 1: 楕円、e = 1: 放物線、e > 1: 双曲線", "problem": "極方程式 r = 6 / (2 - cos θ) の表す曲線の種類を判定せよ。", "solution": "分母分子を2で割り r = 3 / (1 - 1/2 cos θ)。離心率 e = 1/2 < 1 より 楕円。", "importance": "A"}, {"id": 183, "field": "数学C", "unit": "二次曲線", "pattern": "双曲線の直交漸近線（直角双曲線）と回転", "trigger": "xy = k は直角双曲線 x^2 - y^2 = 2k を原点中心に 45° 回転させたもの", "problem": "曲線 xy = 2 の焦点の座標と頂点を求めよ。", "solution": "漸近線が x軸・y軸（直交）。45°回転前の式 X^2 - Y^2 = 4 の焦点 (±2√2, 0) を45°回転して (±2, ±2)。", "importance": "B"}, {"id": 184, "field": "数学C", "unit": "二次曲線", "pattern": "楕円の準円（直交する2接線の交点の軌跡）", "trigger": "直交する2接線の交点の軌跡は同心円 x^2 + y^2 = a^2 + b^2 となる", "problem": "楕円 x^2/9 + y^2/4 = 1 に引いた2本の接線が直交するとき、その交点の軌跡を求めよ。", "solution": "接線方程式の傾き m による表示と直交条件 m1 m2 = -1 から x^2 + y^2 = 9 + 4 = 13 の円を導出。", "importance": "A"}, {"id": 185, "field": "数学C", "unit": "二次曲線", "pattern": "放物線の光学特性と接線の幾何学的性質", "trigger": "軸に平行に入射した光はすべて焦点に集まる。焦点を通る弦の両端における2接線は準線上で直交", "problem": "放物線 y^2 = 4px の焦点を通る直線が放物線と交わる2点における接線の交点は準線上にある証明。", "solution": "焦点を通る直線の媒介変数表示と接線公式を連立し、交点の x 座標が常に -p になることを示す。", "importance": "B"}, {"id": 186, "field": "数学C", "unit": "二次曲線", "pattern": "双曲線の焦点からの距離の差の利用問題", "trigger": "|PF1 - PF2| = 2a。2定点からの距離の差が一定である条件を満たす点の軌跡", "problem": "点 A(5, 0) と 円 (x+5)^2 + y^2 = 16 の両方に接する円の中心Pの軌跡を求めよ。", "solution": "中心Pから円の中心B(-5,0)までの距離とAまでの距離の差が円の半径4で一定。双曲線を描く。", "importance": "A"}, {"id": 187, "field": "数学C", "unit": "二次曲線", "pattern": "2次曲線の平行移動と一般形の標準化（平方完成）", "trigger": "Ax^2 + Cy^2 + Dx + Ey + F = 0 を x, y それぞれ平方完成して中心・頂点を平行移動", "problem": "方程式 4x^2 + y^2 - 16x + 2y + 13 = 0 の表す曲線の中心と焦点を求めよ。", "solution": "4(x-2)^2 + (y+1)^2 = 4 ⇒ (x-2)^2/1 + (y+1)^2/4 = 1。中心 (2, -1) の縦長楕円。焦点 (2, -1 ± √3)。", "importance": "S"}, {"id": 188, "field": "数学C", "unit": "二次曲線", "pattern": "楕円の面積公式 S = πab の利用", "trigger": "円 x^2+y^2=a^2 を y軸方向に b/a 倍に縮小したものと捉え、面積は πa^2 × (b/a) = πab", "problem": "楕円 x^2/16 + y^2/9 = 1 で囲まれた図形の面積 S を求めよ。", "solution": "a = 4, b = 3 より S = π × 4 × 3 = 12π。", "importance": "S"}, {"id": 189, "field": "数学C", "unit": "融合発展", "pattern": "複素数平面と数列の融合（ド・モアブル漸化式）", "trigger": "z_{n+1} = c z_n による等比数列の螺旋運動と絶対値・偏角の連立漸化式", "problem": "z_1 = 1, z_{n+1} = (1 + √3 i)/4 z_n で定められる複素数列の |z_n| と ∑ |z_n| を求めよ。", "solution": "|z_{n+1}| = 1/2 |z_n| より公比 1/2 の等比数列。無限等比級数の和公式に帰着して算出。", "importance": "A"}, {"id": 190, "field": "数学C", "unit": "融合発展", "pattern": "ベクトルと図形の性質の融合（重心・内心・外心の同一式表現）", "trigger": "s OA + t OB + u OC = 0 の係数比から面積比 △PBC : △PCA : △PAB = s : t : u を導く", "problem": "△ABCの内部の点Pに対し 2 PA + 3 PB + 4 PC = 0 が成り立つときの面積比 △PBC : △ABC。", "solution": "始点をAに揃えて AP を AB, AC で表し、線分比を求めて面積比 2 / (2+3+4) = 2/9 を導出。", "importance": "S"}, {"id": 191, "field": "数学C", "unit": "融合発展", "pattern": "確率と数列の融合（難関私大文系頻出の確率漸化式）", "trigger": "3状態 A, B, C の推移確率から a_{n+1} = p a_n + q を導き、特性方程式で一般項を求める", "problem": "白球・黒球を移動させる試行を n 回繰り返したとき、箱Aに白球がある確率 P_n を求めよ。", "solution": "P_{n+1} = (1/3) P_n + 1/4 (1 - P_n) 等の漸化式を立て、基本型漸化式に帰着させて一般項を解く。", "importance": "S"}, {"id": 192, "field": "数学C", "unit": "融合発展", "pattern": "整数と数列の融合（漸化式で定まる数列の周期性と余り）", "trigger": "数列 a_n を m で割った余り r_n の周期性（鳩の巣原理）から倍数判定や割り切れを証明", "problem": "a_1=1, a_2=3, a_{n+2} = a_{n+1} + 2a_n で定まる数列の各項を 5 で割った余りの周期性を調べよ。", "solution": "余り数列 1, 3, 0, 1, 3, ... より周期4で循環することを示し、a_{2024} が 5 の倍数か判定。", "importance": "A"}, {"id": 193, "field": "数学C", "unit": "融合発展", "pattern": "微積分と整数の融合（格子点の数と面積の近似）", "trigger": "曲線下の格子点数を ∑ で立式し、定積分による面積評価 ∫ f(x)dx と挟み撃ちの原理で極限を求める", "problem": "領域 0 ≦ x ≦ n, 0 ≦ y ≦ x^2 内の格子点数 N(n) と 面積 ∫_0^n x^2 dx の関係を問う問題。", "solution": "N(n) = ∑_{k=0}^n (k^2+1) = 1/3 n^3 + 1/2 n^2 + 7/6 n + 1。最高次係数が面積 1/3 と一致することを確認。", "importance": "A"}, {"id": 194, "field": "数学C", "unit": "融合発展", "pattern": "軌跡と領域におけるパラメータ消去と存在条件（順像法 vs 逆像法）", "trigger": "順像法（ファクシミリの原理: xを固定してyの動く範囲）と逆像法（実数解条件）の使い分け", "problem": "直線 y = 2ax - a^2 (0 ≦ a ≦ 2) の通過領域を順像法・逆像法の両面から考察して図示せよ。", "solution": "xを固定したときの2次関数 g(a) = -a^2 + 2xa の 0≦a≦2 における最大値・最小値から領域を特定。", "importance": "S"}, {"id": 195, "field": "数学C", "unit": "融合発展", "pattern": "条件付き多変数関数の対称性とラグランジュ的発想", "trigger": "対称式 x+y+z=k, xy+yz+zx=l の条件のもとで 1変数のとり得る値の範囲を判別式から絞る", "problem": "実数 x, y, z が x + y + z = 1, x^2 + y^2 + z^2 = 1 を満たすとき、x のとり得る値の範囲を求めよ。", "solution": "y+z = 1-x, yz = ( (1-x)^2 - (1-x^2) ) / 2 = x^2 - x。y, z の実数条件 D ≧ 0 から x の範囲 -1/3 ≦ x ≦ 1 を導く。", "importance": "S"}, {"id": 196, "field": "数学C", "unit": "融合発展", "pattern": "2次曲線とベクトルの融合（楕円上の点と内積の最大・最小）", "trigger": "楕円のパラメータ表示 (a cos θ, b sin θ) をベクトルの成分に代入し、三角関数の合成で最大化", "problem": "楕円 x^2/4 + y^2 = 1 上の動点Pと定点 A(3, 0) に対し、内積 OP·OA および 距離 AP の最小値。", "solution": "P(2 cos θ, sin θ)。AP^2 = (2 cos θ - 3)^2 + sin^2 θ = 3 cos^2 θ - 12 cos θ + 10。cos θ の2次関数として最小化。", "importance": "A"}, {"id": 197, "field": "数学C", "unit": "融合発展", "pattern": "図形と計量・ベクトルの融合（四面体の体積比と切断）", "trigger": "四面体を平面で切断したときの体積比: V1/V = (AP/AB) · (AQ/AC) · (AR/AD)", "problem": "四面体ABCDの辺AB, AC, ADをそれぞれ 1:2, 2:1, 1:1 に内分する点を通る平面で切った体積比。", "solution": "公式 V1/V = (1/3) × (2/3) × (1/2) = 2/18 = 1/9。初等幾何とベクトルの併用で瞬時に解決。", "importance": "A"}, {"id": 198, "field": "数学C", "unit": "融合発展", "pattern": "3次関数の接線の本数の境界曲線（変曲点における接線）", "trigger": "3次関数の接線の本数は、曲線自身 y=f(x) と 変曲点における接線 y=f'(x_inf)(x-x_inf)+f(x_inf) で領域分割される", "problem": "平面上の各領域から 3次曲線 y = x^3 - 3x に引ける接線の本数（1本・2本・3本）を境界線で分類。", "solution": "変曲点 (0,0) での接線 y = -3x。曲線とこの直線が平面を4分割し、領域ごとに接線の本数が 1, 2, 3本と決定される。", "importance": "S"}, {"id": 199, "field": "数学C", "unit": "融合発展", "pattern": "関数の周期性と対称性の見極め（f(2a-x)=f(x) 等）", "trigger": "f(2a - x) = f(x) は直線 x=a に関して線対称、f(2a - x) = 2b - f(x) は点 (a, b) に関して点対称", "problem": "すべての実数 x で f(2 - x) = f(x) を満たす関数 f(x) の定積分の対称性と性質を利用する問題。", "solution": "線対称性から ∫_0^2 f(x) dx = 2 ∫_0^1 f(x) dx などの積分簡略化を適用。", "importance": "B"}, {"id": 200, "field": "数学C", "unit": "融合発展", "pattern": "難関大文系数学突破の検算・見直し・捨て問見極め戦略", "trigger": "次数チェック・極限チェック・具体値代入検算・次元解析による計算ミスの瞬時発見と得点最大化", "problem": "複雑な数式計算結果（面積・一般項等）に対し、特殊な値（n=1 や a=0）を代入して整合性を検証する手法。", "solution": "(1) 一般項求値後は n=1, 2 を代入して検算 (2) 面積公式は直角三角形や長方形で概算チェック (3) 時間配分と完答重視戦略の徹底。", "importance": "S"}];
+
+        let questions = [...DEFAULT_QUESTIONS];
+        let currentMode = ''; // 'unit', 'random', 'stock'
+        let currentQueue = [];
+        let currentIndex = 0;
+        let reviewStock = JSON.parse(localStorage.getItem('gmarch_math_review_stock') || '[]');
+
+        // Initialize App
+        window.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            populateUnitSelector();
+            updateHeaderAndStats();
+        });
+
+        function initKaTeX() {
+            renderMathInElement(document.body, {
+                delimiters: [
+                    {left: '$$', right: '$$', display: true},
+                    {left: '$', right: '$', display: false},
+                    {left: '\(', right: '\)', display: false},
+                    {left: '\[', right: '\]', display: true}
+                ],
+                throwOnError: false
+            });
+        }
+
+        function reRenderMath() {
+            setTimeout(() => {
+                if (window.renderMathInElement) {
+                    renderMathInElement(document.body, {
+                        delimiters: [
+                            {left: '$$', right: '$$', display: true},
+                            {left: '$', right: '$', display: false},
+                            {left: '\(', right: '\)', display: false},
+                            {left: '\[', right: '\]', display: true}
+                        ],
+                        throwOnError: false
+                    });
+                }
+            }, 20);
+        }
+
+        function updateHeaderAndStats() {
+            document.getElementById('total-count-display').innerText = questions.length;
+            document.getElementById('stock-count-display').innerText = reviewStock.length;
+            document.getElementById('btn-start-stock').innerText = `ストックを演習 (${reviewStock.length}問)`;
+            if (reviewStock.length === 0) {
+                document.getElementById('btn-start-stock').classList.add('opacity-50', 'cursor-not-allowed');
+            } else {
+                document.getElementById('btn-start-stock').classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        }
+
+        function populateUnitSelector() {
+            const selector = document.getElementById('unit-selector');
+            selector.innerHTML = '';
+            
+            // Collect units with count
+            const unitCounts = {};
+            questions.forEach(q => {
+                unitCounts[q.unit] = (unitCounts[q.unit] || 0) + 1;
+            });
+
+            Object.keys(unitCounts).forEach(unit => {
+                const opt = document.createElement('option');
+                opt.value = unit;
+                opt.innerText = `${unit} (${unitCounts[unit]}問)`;
+                selector.appendChild(opt);
+            });
+        }
+
+        // Navigation & Screens
+        function showTopMenu() {
+            document.getElementById('screen-top').classList.remove('hidden');
+            document.getElementById('screen-exercise').classList.add('hidden');
+            document.getElementById('screen-finish').classList.add('hidden');
+            updateHeaderAndStats();
+        }
+
+        function startUnitMode() {
+            const selectedUnit = document.getElementById('unit-selector').value;
+            currentMode = 'unit';
+            currentQueue = questions.filter(q => q.unit === selectedUnit);
+            if (currentQueue.length === 0) return;
+            currentIndex = 0;
+            loadQuestion();
+        }
+
+        function startRandomMode() {
+            currentMode = 'random';
+            currentQueue = [...questions].sort(() => Math.random() - 0.5);
+            currentIndex = 0;
+            loadQuestion();
+        }
+
+        function startStockMode() {
+            if (reviewStock.length === 0) return;
+            currentMode = 'stock';
+            currentQueue = questions.filter(q => reviewStock.includes(q.id));
+            currentIndex = 0;
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            const q = currentQueue[currentIndex];
+
+            // Render details
+            document.getElementById('problem-pattern').innerText = q.pattern || '';
+            document.getElementById('problem-text').innerText = q.problem;
+            document.getElementById('trigger-text').innerText = q.trigger;
+            document.getElementById('solution-text').innerText = q.solution;
+
+            // Badges
+            document.getElementById('badge-field').innerText = q.field || '数学';
+            document.getElementById('badge-unit').innerText = q.unit || '全般';
+            
+            const impBadge = document.getElementById('badge-importance');
+            impBadge.innerText = `重要度 ${q.importance}`;
+            if (q.importance === 'S') impBadge.className = "px-2 py-0.5 rounded text-white font-bold bg-rose-500";
+            else if (q.importance === 'A') impBadge.className = "px-2 py-0.5 rounded text-white font-bold bg-amber-500";
+            else impBadge.className = "px-2 py-0.5 rounded text-white font-bold bg-blue-500";
+
+            // Progress Indicator
+            document.getElementById('progress-indicator').innerText = `${currentIndex + 1} / ${currentQueue.length}問目`;
+
+            // Reset UI Visibility to Step 1
+            document.getElementById('section-trigger-btn').classList.remove('hidden');
+            document.getElementById('section-trigger-content').classList.add('hidden');
+            document.getElementById('section-solution-btn').classList.add('hidden');
+            document.getElementById('section-solution-content').classList.add('hidden');
+            document.getElementById('section-rating').classList.add('hidden');
+
+            // Switch Screen
+            document.getElementById('screen-top').classList.add('hidden');
+            document.getElementById('screen-exercise').classList.remove('hidden');
+            document.getElementById('screen-finish').classList.add('hidden');
+
+            reRenderMath();
+        }
+
+        function revealTrigger() {
+            document.getElementById('section-trigger-btn').classList.add('hidden');
+            document.getElementById('section-trigger-content').classList.remove('hidden');
+            document.getElementById('section-solution-btn').classList.remove('hidden');
+            reRenderMath();
+        }
+
+        function revealSolution() {
+            document.getElementById('section-solution-btn').classList.add('hidden');
+            document.getElementById('section-solution-content').classList.remove('hidden');
+            document.getElementById('section-rating').classList.remove('hidden');
+            reRenderMath();
+        }
+
+        function rateQuestion(remembered) {
+            const q = currentQueue[currentIndex];
+            if (!remembered) {
+                if (!reviewStock.includes(q.id)) {
+                    reviewStock.push(q.id);
+                }
+            } else {
+                reviewStock = reviewStock.filter(id => id !== q.id);
+            }
+            localStorage.setItem('gmarch_math_review_stock', JSON.stringify(reviewStock));
+
+            // Move to next question or finish
+            currentIndex++;
+            if (currentIndex < currentQueue.length) {
+                loadQuestion();
+            } else {
+                showFinishScreen();
+            }
+        }
+
+        function showFinishScreen() {
+            document.getElementById('screen-exercise').classList.add('hidden');
+            document.getElementById('screen-finish').classList.remove('hidden');
+            document.getElementById('finish-message').innerText = `${currentQueue.length}問の演習を完了しました！`;
+        }
+
+        function resetStock() {
+            if (confirm('やり直しストックをクリアしますか？')) {
+                reviewStock = [];
+                localStorage.removeItem('gmarch_math_review_stock');
+                updateHeaderAndStats();
+            }
+        }
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                const jsonRows = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+
+                // Parse standard pattern format
+                const importedQuestions = [];
+                for (let i = 0; i < jsonRows.length; i++) {
+                    const row = jsonRows[i];
+                    if (row && row.length >= 7 && typeof row[1] === 'number') {
+                        importedQuestions.push({
+                            id: row[1],
+                            field: String(row[2] || ''),
+                            unit: String(row[3] || ''),
+                            pattern: String(row[4] || ''),
+                            trigger: String(row[5] || ''),
+                            problem: String(row[6] || ''),
+                            solution: String(row[7] || ''),
+                            importance: String(row[8] || 'A')
+                        });
+                    }
+                }
+
+                if (importedQuestions.length > 0) {
+                    questions = importedQuestions;
+                    populateUnitSelector();
+                    updateHeaderAndStats();
+                    alert(`${questions.length}問の解法パターンを読み込みました！`);
+                } else {
+                    alert('有効な問題データが見つかりませんでした。フォーマットを確認してください。');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+    </script>
+</body>
+</html>
